@@ -57,7 +57,7 @@ const updateAll = async () => {
 }
 
 const cronUpdateAll = () => {
-  cron.schedule('* * * * *', updateAll)
+  cron.schedule('*/10 * * * *', updateAll)
 }
 
 app.on('started', cronUpdateAll)
