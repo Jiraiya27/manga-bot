@@ -25,7 +25,7 @@ const addSource = async (event, { src, title, frequency = 30 }) => {
 
   try {
     await RssChannel.create({ src, title: channelTitle, items: feed.items, frequency, lastUpdated: new Date() })
-    return sendMessage(event, ['Added', `rss feed src: ${src}`, `title: ${channelTitle}`, `refresh frequency: ${frequency} mins`])
+    return sendMessage(event, ['Added', `rss feed src: ${src}`, `title: ${channelTitle}`, `refresh frequency: ${frequency} mins`].join('\n'))
   } catch (error) {
     console.error(error)
     if (error.code === 11000) {
