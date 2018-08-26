@@ -15,7 +15,10 @@ const RoomSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'group', 'room']
   },
-  feeds: [RoomFeedsSchema],
+  feeds: {
+    type: [RoomFeedsSchema],
+    default: [],
+  },
 })
 
 const Room = mongoose.model('room', RoomSchema)
