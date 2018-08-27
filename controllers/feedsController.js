@@ -57,7 +57,11 @@ const updateAll = async (req, res) => {
 
     return res.send('Success') 
   } catch (error) {
-    console.error(error)
+    if (error.originalError) {
+      console.error(error.originalError.response)
+    } else {
+      console.error(error)
+    }
     return res.status(500).send('Failed')
   }
 }
