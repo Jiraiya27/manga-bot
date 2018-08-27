@@ -45,7 +45,7 @@ const updateAll = async (req, res) => {
 
       await Promise.all(rooms.map(async room => {
         await Promise.all(newItems.map(newItem => {
-          return client.pushMessage(room.id, `${newItem.title} : ${newItem.link}`)
+          return client.pushMessage(room.id, { type: 'text', text: `${newItem.title} : ${newItem.link}` })
         }))
       }))
 
