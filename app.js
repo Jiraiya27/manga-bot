@@ -15,6 +15,7 @@ mongoose.connection.on('error', error => {
 })
 
 const { webhook } = require('./controllers/lineController')
+const { updateAll } = require('./controllers/feedsController')
 const { middleware } = require('@line/bot-sdk')
 const lineConfig = require('./configs/lineConfig')
 
@@ -24,6 +25,8 @@ app.set('port', process.env.PORT || 3000)
 app.use(morgan('[:date[iso]] :method :url :status :response-time ms'))
 
 app.post('/webhook', middleware(lineConfig), webhook)
+
+app.get('/updateAll', updateAll)
 
 app.use((err, req, res, next) => {
   console.error(err)
