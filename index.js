@@ -3,7 +3,7 @@ const axios = require('axios')
 
 const app = require('./app')
 
-const BASE_URL = `http://localhost:${app.get('port')}`
+const BASE_URL = process.env.BASE_URL || `'http://localhost:${app.get('port')}`
 
 const pingUpdateAll = () => {
   axios.get(`${BASE_URL}/updateAll`)
