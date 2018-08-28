@@ -58,7 +58,10 @@ const updateAll = async (req, res) => {
       await Promise.all(rooms.map(async room => {
         // Get room's filters for this feed
         console.log({ feeds: room.feeds, channelId: channel._id })
-        const filteredFeed = room.feeds.find(feed => feed.channelId === channel._id)
+        const filteredFeed = room.feeds.find(feed => {
+          console.log({ feed })
+          return feed.channelId === channel._id
+        })
         console.log({ filteredFeed })
         const roomFilters = filteredFeed.filters
         console.log({ roomFilters })
