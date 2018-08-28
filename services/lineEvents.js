@@ -9,7 +9,7 @@ const handleMessage = async event => {
   }
 
   const addSourceRegex = /^\/addSource (\S+)(\s\S+)?(\s\S+)?/
-  const addToRoomRegex = /^\/add (\S+)/
+  const addToRoomRegex = /^\/add (\S+)(\s*--filters="(.+)")?/
   const listSourcesRegex = /^\/listSources/
 
   console.log({ text })
@@ -20,8 +20,10 @@ const handleMessage = async event => {
   }
 
   if (addToRoomRegex.test(text)) {
-    const [, title] = addToRoomRegex.exec(text)
-    return addSourceToRoom(event, title)
+    const [, title, grp2, filters] = addToRoomRegex.exec(text)
+    // escape commas and split args
+    const filtersArray = filters ? filters.replace('\,', ',').split(',') : []
+    return addSourceToRoom(event, title, filtersArray)
   }
 
   if (listSourcesRegex.test(text)) {

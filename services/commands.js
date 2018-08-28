@@ -51,7 +51,7 @@ const addSourceToRoom = async (event, title, filters) => {
   const room = await Room.findOne({ id: chatId })
   room.feeds.push({ channelId: channel.id, filters })
   await room.save()
-  const message = filters
+  const message = filters.length > 0
     ? `Added feed ${channel.title} with filters as ${filters}`
     : `Added feed ${channel.title} without any filter`
   return sendMessage(event, message)
