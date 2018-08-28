@@ -38,7 +38,7 @@ const updateAll = async (req, res) => {
       if (feed.title === 'MangaStream Releases') {
         const lastItem = channel.items[0]
         for (let i = 0; i < feed.items.length; i++) {
-          const item = array[i];
+          const item = feed.items[i];
           if (item.title === lastItem.title) break;
           newItems.push(item)
         }
