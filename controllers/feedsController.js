@@ -57,20 +57,11 @@ const updateAll = async (req, res) => {
 
       await Promise.all(rooms.map(async room => {
         // Get room's filters for this feed
-        console.log({ feeds: room.feeds, channelId: channel._id })
-        const filteredFeed = room.feeds.find(feed => {
-          console.log({ feed })
-          console.log('types:', typeof feed.channelId, typeof channel._id)
-          console.log('triple equal check:', feed.channelId === channel._id)
-          console.log('double equal check:', feed.channelId == channel._id)
-          return feed.channelId.toString() === channel._id.toString()
-        })
-        console.log({ filteredFeed })
-        const roomFilters = filteredFeed.filters
+        const roomFilters = room.feeds.find(feed => feed.channelId.toString() === channel._id.toString()).filters
         console.log({ roomFilters })
         // Update only items that passes room's filter for that feed
         const filteredItems = roomFilters.length > 0
-          ? newItems.filter(item => roomFilters.filter(filter => new RegExp(filter, 'i').test(item.title)))
+          ? newItems.filter(item => roomFilters.filter(filter => new RegExp(filter, 'i').test(item.title)).length > 0)
           : newItems
         // Send message to update room
         await Promise.all(filteredItems.map(newItem => {
