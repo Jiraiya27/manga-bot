@@ -22,7 +22,7 @@ const updateAll = async (req, res) => {
     let channels = await RssChannel.find()
     console.log({ channels })
     channels = channels.filter(channel => {
-      return moment(channel.lastUpdated).add(channel.frequency, 'minutes').isBefore(moment())
+      return moment(channel.lastUpdated).add(channel.frequency, 'minutes').isSameOrBefore(moment(), 'minute')
     })
     console.log({ channels })
     
