@@ -60,7 +60,10 @@ const updateAll = async (req, res) => {
         console.log({ feeds: room.feeds, channelId: channel._id })
         const filteredFeed = room.feeds.find(feed => {
           console.log({ feed })
-          return feed.channelId === channel._id
+          console.log('types:', typeof feed.channelId, typeof channel._id)
+          console.log('triple equal check:', feed.channelId === channel._id)
+          console.log('double equal check:', feed.channelId == channel._id)
+          return feed.channelId == channel._id
         })
         console.log({ filteredFeed })
         const roomFilters = filteredFeed.filters
