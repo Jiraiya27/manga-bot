@@ -31,10 +31,22 @@ const updateAll = async (req, res) => {
       console.log({ channel })
       const feed = await parser.parseURL(channel.src)
       const lastUpdatedMoment = moment(channel.lastUpdated)
+
       // Filter out new items
-      const newItems = feed.items.filter(item => {
-        return moment(item.isoDate).isAfter(lastUpdatedMoment)
-      })
+      let newItems = []
+      // ms doesn't use 24 Hr format and doesn't tell AM/PM
+      if (feed.title === 'MangaStream Releases') {
+        const lastItem = channel.items[0]
+        for (let i = 0; i < feed.items.length; i++) {
+          const item = array[i];
+          if (item.title === lastItem.title) break;
+          newItems.push(item)
+        }
+      } else {
+        newItems = feed.items.filter(item => {
+          return moment(item.isoDate).isAfter(lastUpdatedMoment)
+        })
+      }
 
       console.log({ newItems })
 
