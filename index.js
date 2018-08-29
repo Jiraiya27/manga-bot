@@ -10,7 +10,7 @@ const pingUpdateAll = () => {
 }
 
 const cronUpdateAll = () => {
-  cron.schedule('* * * * *', pingUpdateAll)
+  cron.schedule('*/10 * * * *', pingUpdateAll)
 }
 
 app.on('started', cronUpdateAll)
