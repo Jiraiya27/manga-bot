@@ -6,8 +6,8 @@ const { getChatRoom, sendMessage } = require('./lineSDK')
 
 const parser = new Parser();
 
-const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/m
-const dupKeyContentRegex = /dup\ key\:\ \{\ \:\ \"(\S*)\"\ \}/
+const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/m
+const dupKeyContentRegex = /dup key: { : "(\S*)" \}/
 
 // Returns a list of all commands
 function help() {
@@ -24,7 +24,13 @@ const addSource = async (event, { src, title, frequency = 30 }) => {
   const channelTitle = title || feed.title
 
   try {
-    await RssChannel.create({ src, title: channelTitle, items: feed.items, frequency, lastUpdated: new Date() })
+    await RssChannel.create({
+      src,
+      title: channelTitle,
+      items: feed.items,
+      frequency,
+      lastUpdated: new Date(),
+    })
     return sendMessage(event, ['Added', `rss feed src: ${src}`, `title: ${channelTitle}`, `refresh frequency: ${frequency} mins`].join('\n'))
   } catch (error) {
     console.error(error)
@@ -49,7 +55,15 @@ const addSourceToRoom = async (event, title, filters) => {
 
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId })
-  room.feeds.push({ channelId: channel.id, filters })
+
+  const existingFeed = room.feeds.find(f => f.channelId.toString() === channel._id)
+
+  if (existingFeed) {
+    existingFeed.filters = new Set([...existingFeed.filters, ...filters])
+  } else {
+    room.feeds.push({ channelId: channel._id, filters })
+  }
+
   await room.save()
   const message = filters.length > 0
     ? `Added feed ${channel.title} with filters as ${filters}`
@@ -67,10 +81,12 @@ function refreshSource() {
 
 }
 
+// list global sources
 const listSources = async event => {
-
+  console.log(event)
 }
 
+// list feeds subscribed by room
 function listRoomFeeds() {
 
 }
@@ -83,4 +99,5 @@ module.exports = {
   updateSource,
   refreshSource,
   listSources,
+  listRoomFeeds,
 }

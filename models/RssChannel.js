@@ -23,6 +23,14 @@ const RssChannelSchema = new mongoose.Schema({
     type: Number,
     default: 30,
   },
+  global: {
+    type: Boolean,
+    default: false,
+  },
+  roomIds: {
+    type: [mongoose.Schema.Types.ObjectId],
+    default: [],
+  },
   lastUpdated: Date,
 })
 

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const RssChannel = require('./RssChannel')
 
 const RoomFeedsSchema = new mongoose.Schema({
   channelId: mongoose.Schema.Types.ObjectId,
@@ -13,7 +12,7 @@ const RoomSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['user', 'group', 'room']
+    enum: ['user', 'group', 'room'],
   },
   feeds: {
     type: [RoomFeedsSchema],

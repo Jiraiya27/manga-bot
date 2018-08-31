@@ -8,15 +8,15 @@ const handleMessage = async event => {
     return Promise.resolve()
   }
 
-  const addSourceRegex = /^\/addSource (\S+)(\s\S+)?(\s\S+)?/
+  const addSourceRegex = /^\/addSource (\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--private)?/
   const addToRoomRegex = /^\/add (\S+)(\s*--filters="(.+)")?/
   const listSourcesRegex = /^\/listSources/
 
   console.log({ text })
 
   if (addSourceRegex.test(text)) {
-    const [, src, title, frequency] = addSourceRegex.exec(text)
-    return addSource(event, { src, title, frequency })
+    const [, src, title, frequency, privateFlag ] = addSourceRegex.exec(text)
+    return addSource(event, { src, title, frequency, isPrivate: !!privateFlag })
   }
 
   if (addToRoomRegex.test(text)) {
