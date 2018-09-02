@@ -10,14 +10,8 @@ const RssItemSchema = new mongoose.Schema({
 })
 
 const RssChannelSchema = new mongoose.Schema({
-  src: {
-    type: String,
-    unique: true,
-  },
-  title: {
-    type: String,
-    unique: true,
-  },
+  src: String,
+  title: String,
   items: [RssItemSchema],
   frequency: {
     type: Number,

@@ -83,6 +83,21 @@ const sendMessage = async (event, message) => {
   }
 }
 
+const replyMessage = async (event, message) => {
+  if (typeof message === 'string') {
+    return client.replyMessage(event.replyToken, {
+      type: 'text',
+      text: message,
+    })
+  }
+  if (Array.isArray(message)) {
+    const messages = message.map(text => ({ type: 'text', text }))
+    return client.replyMessage(event.replyToken, messages)
+  }
+}
+
+const isAdmin = event => lineConfig.ADMIN_ID && lineConfig.ADMIN_ID === event.source.userId
+
 module.exports = {
   client,
   getChatRoom,
@@ -90,4 +105,6 @@ module.exports = {
   getMemberIds,
   getMemberProfiles,
   sendMessage,
+  replyMessage,
+  isAdmin,
 }

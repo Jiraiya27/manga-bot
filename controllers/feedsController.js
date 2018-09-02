@@ -85,32 +85,75 @@ const updateAll = async (req, res) => {
   }
 }
 
-module.exports = {
-  updateAll,
+// skips querying for rooms again
+const refresh = async (req, res) => {
+  try {
+    const channels = await RssChannel.find({
+      $where: 'this.lastUpdated > new Date(new Date().getTime() - this.frequency * 6000000)',
+    }).populate('roomIds')
+
+    const cache = {}
+
+    await Promise.all(channels.map(async channel => {
+      const feed = cache[channel.src] || await parser.parseURL(channel.src)
+      const lastUpdatedMoment = moment(channel.lastUpdated)
+
+      // Filter out new items
+      let newItems = []
+      // ms doesn't use 24 Hr format and doesn't tell AM/PM
+      // niceoppai uses GMT +7
+      if (feed.title === 'MangaStream Releases' || feed.title === 'Niceoppai Recent Updates') {
+        const lastItem = channel.items[0]
+        for (let i = 0; i < feed.items.length; i++) {
+          const item = feed.items[i];
+          if (item.title === lastItem.title) break;
+          newItems.push(item)
+        }
+      } else {
+        newItems = feed.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
+      }
+
+      console.log({ newItems })
+
+      // Cache response, might not work if requests are in parallel anyway
+      cache[channel.src] = feed
+
+      // Update subscribed rooms based on channels
+      const rooms = channel.roomIds
+
+      await Promise.all(rooms.map(async room => {
+        // Get room's filters for this feed
+        const { filters } = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
+        console.log({ filters })
+        // Update only items that passes room's filter for that feed
+        const filteredItems = filters.length > 0
+          ? newItems.filter(item => filters.filter(filter => new RegExp(filter, 'i').test(item.title)).length > 0)
+          : newItems
+        // Send message to update room
+        await Promise.all(filteredItems.map(newItem => {
+          return client.pushMessage(room.id, {
+            type: 'text',
+            text: `${newItem.title} : ${newItem.link}`,
+          })
+        }))
+      }))
+
+      // Update channel time and items
+      channel.items = feed.items
+      channel.lastUpdated = new Date()
+      await channel.save()
+    }))
+  } catch (error) {
+    if (error.originalError) {
+      console.error(error.originalError.response)
+    } else {
+      console.error(error)
+    }
+    return res.status(500).send('Failed')
+  }
 }
 
-// Update all
-
-// get all channels + their roomIds, global and private, that has passed last updated
-// normalize source and add roomNo as a big object { [src]: [roomIds]}
-// loop normalized source and fetch new items
-// loop through source's subscribed rooms and their respective filters, send any updates
-// update source items and lastUpdated time
-
-
-// Add src
-
-// All src will be private, except admin can add global
-// eslint-disable-next-line
-// If admin add global src will need to migrate room's data a bit (remove their private to use global's src and name)
-// eslint-disable-next-line
-// will check is url, is rss, is not a repeat after checking normalized src, is not a repeat in name for the room and also all global sources (for name and normalized src, must used addToRoom instead)
-// Can edit private src/name/frequency not faster than 30 mins for now?
-// Add filter later from different command
-
-
-// Add to room
-
-// add same way from global src
-// private src auto added
-// can add/edit/remove filters as needed
+module.exports = {
+  updateAll,
+  refresh,
+}
