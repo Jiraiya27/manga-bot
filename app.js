@@ -2,6 +2,11 @@ require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const mongoose = require('mongoose')
+const { middleware } = require('@line/bot-sdk')
+
+const { webhook } = require('./controllers/lineController')
+const { updateAll } = require('./controllers/feedsController')
+const lineConfig = require('./configs/lineConfig')
 
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true })
 mongoose.connection.once('open', () => {
@@ -14,12 +19,9 @@ mongoose.connection.on('error', error => {
   process.exit(1)
 })
 
-const { webhook } = require('./controllers/lineController')
-const { updateAll } = require('./controllers/feedsController')
-const { middleware } = require('@line/bot-sdk')
-const lineConfig = require('./configs/lineConfig')
-
+// eslint-disable-next-line no-multi-assign
 const app = module.exports = express()
+
 app.set('port', process.env.PORT || 3000)
 
 app.use(morgan('[:date[iso]] :method :url :status :response-time ms'))
@@ -28,6 +30,7 @@ app.post('/webhook', middleware(lineConfig), webhook)
 
 app.get('/updateAll', updateAll)
 
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error(err)
   return res.status(500).json({ error: err.message })
@@ -39,4 +42,3 @@ const listen = () => app.listen(app.get('port'), () => {
 })
 
 app.on('mongo:open', listen)
-

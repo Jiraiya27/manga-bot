@@ -53,14 +53,19 @@ const updateAll = async (req, res) => {
 
       await Promise.all(rooms.map(async room => {
         // Get room's filters for this feed
-        const roomFilters = room.feeds.find(f => f.channelId.toString() === channel._id.toString()).filters
-        console.log({ roomFilters })
+        const { filters } = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
+        console.log({ filters })
         // Update only items that passes room's filter for that feed
-        const filteredItems = roomFilters.length > 0
-          ? newItems.filter(item => roomFilters.filter(filter => new RegExp(filter, 'i').test(item.title)).length > 0)
+        const filteredItems = filters.length > 0
+          ? newItems.filter(item => filters.filter(filter => new RegExp(filter, 'i').test(item.title)).length > 0)
           : newItems
         // Send message to update room
-        await Promise.all(filteredItems.map(newItem => client.pushMessage(room.id, { type: 'text', text: `${newItem.title} : ${newItem.link}` })))
+        await Promise.all(filteredItems.map(newItem => {
+          return client.pushMessage(room.id, {
+            type: 'text',
+            text: `${newItem.title} : ${newItem.link}`,
+          })
+        }))
       }))
 
       // Update channel time and items
@@ -96,7 +101,9 @@ module.exports = {
 // Add src
 
 // All src will be private, except admin can add global
+// eslint-disable-next-line
 // If admin add global src will need to migrate room's data a bit (remove their private to use global's src and name)
+// eslint-disable-next-line
 // will check is url, is rss, is not a repeat after checking normalized src, is not a repeat in name for the room and also all global sources (for name and normalized src, must used addToRoom instead)
 // Can edit private src/name/frequency not faster than 30 mins for now?
 // Add filter later from different command

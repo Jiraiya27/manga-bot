@@ -13,16 +13,15 @@ const client = new Client(lineConfig)
  */
 
 const getChatRoom = event => {
-  const { type } = event.source
+  const { type, userId } = event.source
   const chatId = event.source[`${type}Id`]
-  const userId = event.source.userId
-  return { type, chatId, userId } 
+  return { type, chatId, userId }
 }
 
 
 /**
  * @param {object} event
- * @returns {Promise<Profile>} 
+ * @returns {Promise<Profile>}
  */
 const getSenderProfile = async event => {
   const { type, chatId, userId } = getChatRoom(event)
@@ -31,10 +30,9 @@ const getSenderProfile = async event => {
     if (type === 'user') {
       profile = await client.getProfile(userId)
     } else if (type === 'group') {
-      const chatId = event.source[`${type}Id`]
       profile = await client.getGroupMemberProfile(chatId, userId)
     } else if (type === 'room') {
-      profile = await client.getRoomMemberProfile(chatId, userId)      
+      profile = await client.getRoomMemberProfile(chatId, userId)
     }
   } catch (error) {
     console.error('Get profile error:', error.originalError.response)
@@ -65,9 +63,9 @@ const getMemberIds = async event => {
 const getMemberProfiles = async event => {
   const memberIds = await getMemberIds(event)
   return memberIds.map(id => {
-    if (event.source.type === 'user') return client.getProfile(id)
     if (event.source.type === 'group') return client.getGroupMemberProfile(event.source.groupId, id)
     if (event.source.type === 'room') return client.getRoomMemberProfile(event.source.roomId, id)
+    return client.getProfile(id) // type === 'user'
   })
 }
 

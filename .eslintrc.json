@@ -1,5 +1,5 @@
 {
-  "extends": ["airbnb-base", "prettier"],
+  "extends": ["airbnb-base"],
   "rules": {
     "semi": "off",
     "no-underscore-dangle": "off",
@@ -8,6 +8,9 @@
       "allowForLoopAfterthoughts": true
     }],
     "no-console": "off",
-    "object-curly-newline": "off"
+    "object-curly-newline": "off",
+    "consistent-return": "off",
+    "arrow-body-style": "off",
+    "no-use-before-define": "off"
   }
 }

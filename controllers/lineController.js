@@ -9,7 +9,7 @@ const {
 const webhook = async (req, res) => {
   await Promise.all(req.body.events.map(handleEvent))
   return res.status(200).json({
-    message: 'OK'
+    message: 'OK',
   })
 }
 

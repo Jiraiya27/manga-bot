@@ -15,21 +15,20 @@ const handleMessage = async event => {
   console.log({ text })
 
   if (addSourceRegex.test(text)) {
-    const [, src, title, frequency, privateFlag ] = addSourceRegex.exec(text)
+    const [, src, title, frequency, privateFlag] = addSourceRegex.exec(text)
     return addSource(event, { src, title, frequency, isPrivate: !!privateFlag })
   }
 
   if (addToRoomRegex.test(text)) {
-    const [, title, grp2, filters] = addToRoomRegex.exec(text)
+    const [, title,, filters] = addToRoomRegex.exec(text)
     // escape commas and split args
-    const filtersArray = filters ? filters.replace('\,', ',').split(',') : []
+    const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return addSourceToRoom(event, title, filtersArray)
   }
 
   if (listSourcesRegex.test(text)) {
     return listSources(event)
   }
-
 }
 
 const handleFollow = async event => {
