@@ -75,3 +75,6 @@ typings/
 # Local test/note files
 test.js
 TODO
+
+#DB dumps
+db
