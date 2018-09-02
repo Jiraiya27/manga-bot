@@ -121,6 +121,8 @@ const refresh = async (req, res) => {
       // Update subscribed rooms based on channels
       const rooms = channel.roomIds
 
+      console.log({ rooms })
+
       await Promise.all(rooms.map(async room => {
         // Get room's filters for this feed
         const { filters } = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
