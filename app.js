@@ -5,7 +5,7 @@ const mongoose = require('mongoose')
 const { middleware } = require('@line/bot-sdk')
 
 const { webhook } = require('./controllers/lineController')
-const { updateAll } = require('./controllers/feedsController')
+const { refresh } = require('./controllers/feedsController')
 const lineConfig = require('./configs/lineConfig')
 
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true })
@@ -28,7 +28,7 @@ app.use(morgan('[:date[iso]] :method :url :status :response-time ms'))
 
 app.post('/webhook', middleware(lineConfig), webhook)
 
-app.get('/updateAll', updateAll)
+app.get('/updateAll', refresh)
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
