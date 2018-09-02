@@ -1,5 +1,5 @@
 const Room = require('../models/Room')
-const { addSource, addSourceToRoom, listSources } = require('./commands')
+const { addSource, addSourceToRoom, listSources, listRoomFeeds } = require('./commands')
 
 const handleMessage = async event => {
   const { text, type } = event.message
@@ -10,7 +10,8 @@ const handleMessage = async event => {
 
   const addSourceRegex = /^\/addSource (\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--private)?/
   const addToRoomRegex = /^\/add (\S+)(\s*--filters="(.+)")?/
-  const listSourcesRegex = /^\/listSources/
+  const listGlobalsRegex = /^\/list-global/
+  const listRoomFeedsRegex = /^\/list/
 
   console.log({ text })
 
@@ -26,8 +27,12 @@ const handleMessage = async event => {
     return addSourceToRoom(event, title, filtersArray)
   }
 
-  if (listSourcesRegex.test(text)) {
+  if (listGlobalsRegex.test(text)) {
     return listSources(event)
+  }
+
+  if (listRoomFeedsRegex.test(text)) {
+    return listRoomFeeds(event)
   }
 }
 
