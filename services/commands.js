@@ -168,7 +168,11 @@ function refreshSource() {
 const listSources = async event => {
   const channels = await RssChannel.find({ global: true })
   const messages = channels.map((channel, i) => {
-    return `${i + 1}. ${channel.title} - ${channel.src} - ${channel.frequency} mins`
+    return [
+      `${i + 1}. ${channel.title}`,
+      `Src - ${channel.src}`,
+      `Refresh - ${channel.frequency} mins`,
+    ].join('\n')
   })
   return replyMessage(event, messages.join('\n'))
 }
@@ -178,7 +182,12 @@ const listRoomFeeds = async event => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
   const messages = room.feeds.map((feed, i) => {
-    return `${i + 1}. ${feed.channelId.title} - ${feed.channelId.src} - ${feed.channelId.frequency} mins - Filters=${feed.filters}`
+    return [
+      `${i + 1}. ${feed.channelId.title}`,
+      `Src - ${feed.channelId.src}`,
+      `Refresh - ${feed.channelId.frequency} mins`,
+      `Filters - ${feed.filters}`,
+    ].join('\n')
   })
   return replyMessage(event, messages.join('\n'))
 }
