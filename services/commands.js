@@ -178,7 +178,7 @@ const listRoomFeeds = async event => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
   const messages = room.feeds.map((feed, i) => {
-    return `${i + 1}. ${feed.channelId.title} - ${feed.channelId.src} - ${feed.channelId.frequency} mins`
+    return `${i + 1}. ${feed.channelId.title} - ${feed.channelId.src} - ${feed.channelId.frequency} mins - Filters=${feed.filters}`
   })
   return replyMessage(event, messages.join('\n'))
 }
