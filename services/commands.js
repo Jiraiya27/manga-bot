@@ -199,6 +199,7 @@ const listSources = async event => {
       `Refresh - ${channel.frequency} mins`,
     ].join('\n')
   })
+  if (messages.length === 0) return replyMessage(event, 'There are no global feeds. Admin go do your job.')
   return replyMessage(event, messages.join('\n'))
 }
 
@@ -214,6 +215,7 @@ const listRoomFeeds = async event => {
       `Filters - ${feed.filters}`,
     ].join('\n')
   })
+  if (messages.length === 0) return replyMessage(event, 'This room is not subscribed to any feed. Quick add from the global feed to get started.')
   return replyMessage(event, messages.join('\n'))
 }
 
