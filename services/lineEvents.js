@@ -1,5 +1,13 @@
 const Room = require('../models/Room')
-const { addSource, addSourceToRoom, listSources, listRoomFeeds } = require('./commands')
+const {
+  addSource,
+  addSourceToRoom,
+  editSource,
+  listSources,
+  listRoomFeeds,
+  addFilter,
+  removeFilter,
+} = require('./commands')
 
 const handleMessage = async event => {
   const { text, type } = event.message
@@ -10,8 +18,11 @@ const handleMessage = async event => {
 
   const addSourceRegex = /^\/add-source (\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
   const addToRoomRegex = /^\/add (\S+)(\s*--filters="(.+)")?/
+  const editSourceRegex = /^\/edit (\S+)(\s+\S+)?(\s+\S+)?/
   const listGlobalsRegex = /^\/list-global\s*/
   const listRoomFeedsRegex = /^\/list\s*/
+  const addFilterRegex = /^\/add-filter (\S+)(\s*filters="(.+)")?/
+  const removeFilterRegex = /^\/remove-filter (\S+)(\s*filters="(.+)")?/
 
   console.log({ text })
 
@@ -27,12 +38,29 @@ const handleMessage = async event => {
     return addSourceToRoom(event, title, filtersArray)
   }
 
+  if (editSourceRegex.test(text)) {
+    const [, title, property, newVal] = editSourceRegex.exec(text)
+    return editSource(event, title, property, newVal)
+  }
+
   if (listGlobalsRegex.test(text)) {
     return listSources(event)
   }
 
   if (listRoomFeedsRegex.test(text)) {
     return listRoomFeeds(event)
+  }
+
+  if (addFilterRegex.test(text)) {
+    const [, title,, filters] = addFilterRegex.exec(text)
+    const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
+    return addFilter(event, title, filtersArray)
+  }
+
+  if (removeFilterRegex.test(text)) {
+    const [, title,, filters] = removeFilterRegex.exec(text)
+    const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
+    return removeFilter(event, title, filtersArray)
   }
 }
 

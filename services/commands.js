@@ -1,4 +1,5 @@
 const normalizer = require('normalize-url')
+const _ = require('lodash')
 
 const RssChannel = require('../models/RssChannel')
 const Room = require('../models/Room')
@@ -13,6 +14,7 @@ function help() {
 }
 
 // Adds rss feed to db
+// TODO: remove admin/global add, can just manual add from db
 const addSource = async (event, { src, title, frequency = 30, global = false }) => {
   if (!urlRegex.test(src)) {
     return replyMessage(event, `Source '${src}' isn't a url`)
@@ -155,13 +157,36 @@ const addSourceToRoom = async (event, title, filters) => {
 }
 
 // Update src/title/frequency
-function updateSource() {
+const editSource = async (event, title, property, newVal) => {
+  const channel = await RssChannel.findOne({ title: new RegExp(title, 'i') }).populate('roomIds')
+  if (!channel) {
+    return replyMessage(event, 'RssChannel not found')
+  }
 
-}
+  const { chatId } = getChatRoom(event)
+  const stringifiedIds = channel.roomIds.map(id => id.toString())
+  if (!stringifiedIds.includes(chatId)) {
+    return replyMessage(event, `This rooms is not subscribed to feed ${title}`)
+  }
 
-// Updates feed
-function refreshSource() {
+  if (channel.global) {
+    return replyMessage(event, 'Cannot edit global source')
+  }
 
+  if (!['src', 'title', 'frequency'].includes(property)) {
+    return replyMessage(event, 'Can edit only src, title, and frequency')
+  }
+
+  if (!newVal) {
+    return replyMessage(event, 'New value cannot be empty')
+  }
+
+  // TODO: validate each property from model itself
+  channel[property] = newVal
+  await channel.save()
+
+  // TODO: model static function to print details
+  return replyMessage(event, `Updated ${property} to ${newVal}`)
 }
 
 // list global sources
@@ -192,13 +217,51 @@ const listRoomFeeds = async event => {
   return replyMessage(event, messages.join('\n'))
 }
 
+const addFilter = async (event, title, filters) => {
+  const { chatId } = getChatRoom(event)
+  const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+
+  const feed = room.feeds.find(f => f.channelId.title.toLowerCase() === title.toLowerCase())
+  if (!feed) {
+    return replyMessage(event, 'RssChannel not found in this room')
+  }
+
+  const prevFilters = [...feed.filters]
+
+  feed.filters = new Set([...feed.filters, ...filters])
+
+  await room.save()
+
+  return replyMessage(event, `Update filter for ${title} from ${prevFilters} to be ${feed.filters}`)
+}
+
+const removeFilter = async (event, title, filters) => {
+  const { chatId } = getChatRoom(event)
+  const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+
+  const feed = room.feeds.find(f => f.channelId.title.toLowerCase() === title.toLowerCase())
+  if (!feed) {
+    return replyMessage(event, 'RssChannel not found in this room')
+  }
+
+  const prevFilters = [...feed.filters]
+
+  feed.filters = _.difference(prevFilters, filters)
+
+  await room.save()
+
+  return replyMessage(event, `Update filter for ${title} from ${prevFilters} to be ${feed.filters}`)
+}
+
 module.exports = {
   help,
 
   addSource,
   addSourceToRoom,
-  updateSource,
-  refreshSource,
+  editSource,
   listSources,
   listRoomFeeds,
+
+  addFilter,
+  removeFilter,
 }
