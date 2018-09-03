@@ -145,6 +145,8 @@ const refresh = async (req, res) => {
       channel.lastUpdated = new Date()
       await channel.save()
     }))
+
+    return res.send('Success')
   } catch (error) {
     if (error.originalError) {
       console.error(error.originalError.response)
