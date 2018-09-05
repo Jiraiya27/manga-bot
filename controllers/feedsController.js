@@ -10,7 +10,7 @@ const refresh = async (req, res) => {
   try {
     const channels = await RssChannel.find({
       $where: 'this.lastUpdated < new Date(new Date().getTime() - this.frequency * 60000)',
-    }).populate('roomIds')
+    }).populate({ path: 'roomIds', model: 'room' })
 
     const cache = {}
 
