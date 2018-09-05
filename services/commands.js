@@ -135,6 +135,8 @@ const addSourceToRoom = async (event, title, filters) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId })
 
+  console.log({ channel })
+
   if (channel.roomIds.contains(room._id.toString())) {
     return replyMessage(event, `This room is already subscribed to channel: ${channel.title}`)
   }
@@ -145,6 +147,8 @@ const addSourceToRoom = async (event, title, filters) => {
     existingFeed.filters = new Set([...existingFeed.filters, ...filters])
   } else {
     room.feeds.push({ channelId: channel._id, filters })
+    channel.roomIds.push(room._id)
+    await channel.save()
   }
 
   await room.save()
