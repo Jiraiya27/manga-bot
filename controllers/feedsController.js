@@ -9,7 +9,7 @@ const { parse } = require('../services/RSSParser')
 const refresh = async (req, res) => {
   try {
     const channels = await RssChannel.find({
-      $where: 'this.lastUpdated > new Date(new Date().getTime() - this.frequency * 6000000)',
+      $where: 'this.lastUpdated < new Date(new Date().getTime() - this.frequency * 60000)',
     }).populate('roomIds')
 
     const cache = {}
