@@ -74,7 +74,7 @@ const refresh = async (req, res) => {
     } else {
       console.error(error)
     }
-    return res.status(500).send('Failed')
+    return res.send('Failed')
   }
 }
 
