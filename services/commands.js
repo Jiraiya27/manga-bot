@@ -137,7 +137,7 @@ const addSourceToRoom = async (event, title, filters) => {
 
   console.log({ channel })
 
-  if (channel.roomIds.contains(room._id.toString())) {
+  if (channel.roomIds.includes(room._id.toString())) {
     return replyMessage(event, `This room is already subscribed to channel: ${channel.title}`)
   }
 
