@@ -33,7 +33,7 @@ const refresh = async (req, res) => {
         newItems = feed.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
       }
 
-      console.log({ newItems })
+      console.log({ title: channel.title, newItems })
 
       // Cache response, might not work if requests are in parallel anyway
       cache[channel.src] = feed
