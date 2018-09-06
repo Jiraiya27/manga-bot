@@ -152,7 +152,7 @@ const addSourceToRoom = async (event, title, filters) => {
   await room.save()
   const message = filters.length > 0
     ? existingFeed
-      ? `Update feed ${channel.title}'s filters ato be  ${existingFeed.filters}`
+      ? `Update feed ${channel.title}'s filters to be ${existingFeed.filters.join(', ')}`
       : `Added feed ${channel.title} with filters as ${filters}`
     : `Added feed ${channel.title} without any filter`
   return replyMessage(event, message)
@@ -243,7 +243,7 @@ const removeFilter = async (event, title, filters) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
 
-  const feed = room.feeds.find(f => f.channelId.title.toLowerCase() === title.toLowerCase())
+  const feed = room.feeds.find(f => f.channelId.title.toLowerCase().trim() === title.toLowerCase().trim())
   if (!feed) {
     return replyMessage(event, 'RssChannel not found in this room')
   }
