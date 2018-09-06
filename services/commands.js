@@ -142,7 +142,7 @@ const addSourceToRoom = async (event, title, filters) => {
   const existingFeed = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
 
   if (existingFeed) {
-    existingFeed.filters = new Set([...existingFeed.filters, ...filters])
+    existingFeed.filters = [...new Set([...existingFeed.filters, ...filters])]
   } else {
     room.feeds.push({ channelId: channel._id, filters })
     channel.roomIds.push(room._id)
@@ -232,7 +232,7 @@ const addFilter = async (event, title, filters) => {
 
   const prevFilters = [...feed.filters]
 
-  feed.filters = new Set([...feed.filters, ...filters])
+  feed.filters = [...new Set([...feed.filters, ...filters])]
 
   await room.save()
 
