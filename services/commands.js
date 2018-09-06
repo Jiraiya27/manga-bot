@@ -225,7 +225,7 @@ const addFilter = async (event, title, filters) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
 
-  const feed = room.feeds.find(f => f.channelId.title.toLowerCase() === title.toLowerCase())
+  const feed = room.feeds.find(f => f.channelId.title.toLowerCase().trim() === title.toLowerCase().trim())
   if (!feed) {
     return replyMessage(event, 'RssChannel not found in this room')
   }
