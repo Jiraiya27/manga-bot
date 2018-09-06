@@ -217,7 +217,13 @@ const listRoomFeeds = async event => {
       `Filters - ${feed.filters}`,
     ].join('\n')
   })
-  if (messages.length === 0) return replyMessage(event, 'This room is not subscribed to any feed. Quick add from the global feed to get started.')
+  if (messages.length === 0) {
+    return replyMessage(
+      event,
+      'This room is not subscribed to any feed. '
+      + 'Quick add from the global feed to get started.',
+    )
+  }
   return replyMessage(event, messages.join('\n'))
 }
 
@@ -236,7 +242,7 @@ const addFilter = async (event, title, filters) => {
 
   await room.save()
 
-  return replyMessage(event, `Update filter for ${title} from ${prevFilters} to be ${feed.filters}`)
+  return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${feed.filters.join(', ')}"`)
 }
 
 const removeFilter = async (event, title, filters) => {
@@ -254,7 +260,7 @@ const removeFilter = async (event, title, filters) => {
 
   await room.save()
 
-  return replyMessage(event, `Update filter for ${title} from ${prevFilters} to be ${feed.filters}`)
+  return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${feed.filters.join(', ')}"`)
 }
 
 module.exports = {

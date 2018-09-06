@@ -12,6 +12,7 @@
     "consistent-return": "off",
     "arrow-body-style": "off",
     "no-use-before-define": "off",
-    "no-nested-ternary": "off"
+    "no-nested-ternary": "off",
+    "max-len": ["error", 125]
   }
 }
