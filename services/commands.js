@@ -216,7 +216,7 @@ const listRoomFeeds = async event => {
       `Refresh - ${feed.channelId.frequency} mins`,
     ]
     if (feed.filters.length > 0) message.push(`Filters - ${feed.filters}`)
-    return message.join.join('\n')
+    return message.join('\n')
   })
   if (messages.length === 0) {
     return replyMessage(
