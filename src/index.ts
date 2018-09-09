@@ -3,7 +3,7 @@ const axios = require('axios')
 
 const app = require('./app')
 
-const BASE_URL = process.env.BASE_URL || `'http://localhost:${app.get('port')}`
+const BASE_URL = process.env.BASE_URL || `http://localhost:${app.get('port')}`
 const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '*/30 * * * *'
 
 const pingUpdateAll = () => {
@@ -14,4 +14,5 @@ const cronUpdateAll = () => {
   cron.schedule(CRON_SCHEDULE, pingUpdateAll)
 }
 
-app.on('started', cronUpdateAll)
+app.on('started', cronUpdateAll
+)
