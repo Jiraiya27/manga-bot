@@ -8,7 +8,8 @@
   "private": false,
   "scripts": {
     "start": "node index.js",
-    "lint": "eslint"
+    "lint": "eslint",
+    "tslint": "tslint -c tslint.json src/**/*.ts"
   },
   "dependencies": {
     "@line/bot-sdk": "^6.1.0",
