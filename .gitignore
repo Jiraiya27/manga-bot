@@ -78,3 +78,6 @@ TODO
 
 #DB dumps
 db
+
+# Typescript build output
+build
