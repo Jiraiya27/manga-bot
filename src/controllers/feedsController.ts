@@ -1,25 +1,28 @@
-const moment = require('moment')
+import { Request, Response } from 'express'
+import moment from 'moment'
 
-const RssChannel = require('../models/RssChannel')
+import RssChannel, { RssChannelDocument } from '../models/RssChannel'
 
 const { client } = require('../services/lineSDK')
-const { parse } = require('../services/RSSParser')
+import { parse } from '../services/RSSParser'
+import { RssFeed, RssItem } from 'rss-parser';
+import { RoomDocument } from '../models/Room';
 
 // skips querying for rooms again
-const refresh = async (req, res) => {
+export const refresh = async (req: Request, res: Response) => {
   try {
     const channels = await RssChannel.find({
       $where: 'this.lastUpdated < new Date(new Date().getTime() - this.frequency * 60000)',
     }).populate({ path: 'roomIds', model: 'room' })
 
-    const cache = {}
+    const cache: { [key: string]: RssFeed } = {}
 
     await Promise.all(channels.map(async channel => {
       const feed = cache[channel.src] || await parse(channel.src)
       const lastUpdatedMoment = moment(channel.lastUpdated)
 
       // Filter out new items
-      let newItems = []
+      let newItems: RssItem[] = []
       // ms doesn't use 24 Hr format and doesn't tell AM/PM
       // niceoppai uses GMT +7
       if (feed.title === 'MangaStream Releases' || feed.title === 'Niceoppai Recent Updates') {
@@ -39,15 +42,20 @@ const refresh = async (req, res) => {
       cache[channel.src] = feed
 
       // Update subscribed rooms based on channels
-      const rooms = channel.roomIds
-
+      const rooms = <RoomDocument[]>channel.roomIds
       await Promise.all(rooms.map(async room => {
         // Get room's filters for this feed
-        const { filters } = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
-        console.log({ filters })
+        const feed = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
+        if (feed === undefined) {
+          return console.error(`Room id: ${room.id} doesn't match with channel id: ${channel._id}`)
+        }
         // Update only items that passes room's filter for that feed
-        const filteredItems = filters.length > 0
-          ? newItems.filter(item => filters.filter(filter => new RegExp(filter, 'i').test(item.title)).length > 0)
+        // FIX null/undefined check in typescript
+        // What's the point of handling it above if it's still undefined
+        const filteredItems = feed && feed.filters.length > 0
+          // TODO: Fix parser types to not be optional?
+          // Might need to force some required types to be non-optional and provide js checks before save/ is required in model
+          ? newItems.filter(item => feed.filters.filter(filter => new RegExp(filter, 'i').test(item.title || '')).length > 0)
           : newItems
         // Send message to update room
         await Promise.all(filteredItems.map(newItem => {
@@ -60,7 +68,9 @@ const refresh = async (req, res) => {
 
       // Update channel time and items
       /* eslint-disable no-param-reassign */
-      channel.items = feed.items
+      // TODO: consolidate parser items with actual stored item
+      // Difference in presence here
+      channel.items = <RssChannelDocument['items']>feed.items
       channel.lastUpdated = new Date()
       await channel.save()
     }))
@@ -74,8 +84,4 @@ const refresh = async (req, res) => {
     }
     return res.send('Failed')
   }
-}
-
-module.exports = {
-  refresh,
 }

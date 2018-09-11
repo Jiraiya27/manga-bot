@@ -1,7 +1,7 @@
-const { Client } = require('@line/bot-sdk')
-const lineConfig = require('../configs/lineConfig')
+import { Client } from '@line/bot-sdk'
+import { LINE_CONFIG, ADMIN_ID } from '../config.ts'
 
-const client = new Client(lineConfig)
+const client = new Client(LINE_CONFIG)
 
 /**
  * @typedef Profile
@@ -96,7 +96,7 @@ const replyMessage = async (event, message) => {
   }
 }
 
-const isAdmin = event => lineConfig.ADMIN_ID && lineConfig.ADMIN_ID === event.source.userId
+const isAdmin = event => ADMIN_ID && ADMIN_ID === event.source.userId
 
 module.exports = {
   client,

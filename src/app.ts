@@ -1,14 +1,13 @@
-require('dotenv').config()
-const express = require('express')
-const morgan = require('morgan')
-const mongoose = require('mongoose')
-const { middleware } = require('@line/bot-sdk')
+import express, { Request, Response, NextFunction } from 'express'
+import morgan from 'morgan'
+import * as mongoose from 'mongoose'
+import { middleware } from '@line/bot-sdk'
 
-const { webhook } = require('./controllers/lineController')
-const { refresh } = require('./controllers/feedsController')
-const lineConfig = require('./configs/lineConfig')
+import { LINE_CONFIG, MONGODB_URI, PORT } from './config'
+import { webhook } from './controllers/lineController'
+import { refresh } from './controllers/feedsController'
 
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true })
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true })
 mongoose.connection.once('open', () => {
   console.log('Connected to MongoDB')
   app.emit('mongo:open')
@@ -19,25 +18,21 @@ mongoose.connection.on('error', error => {
   process.exit(1)
 })
 
-// eslint-disable-next-line no-multi-assign
 const app = module.exports = express()
-
-app.set('port', process.env.PORT || 3000)
 
 app.use(morgan('[:date[iso]] :method :url :status :response-time ms'))
 
-app.post('/webhook', middleware(lineConfig), webhook)
+app.post('/webhook', middleware(LINE_CONFIG), webhook)
 
-app.get('/updateAll', refresh)
+app.get('/refresh', refresh)
 
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err)
   return res.status(500).json({ error: err.message })
 })
 
-const listen = () => app.listen(app.get('port'), () => {
-  console.log('Application is listening on port:', app.get('port'))
+const listen = () => app.listen(PORT, () => {
+  console.log('Application is listening on port:', PORT)
   app.emit('started')
 })
 
