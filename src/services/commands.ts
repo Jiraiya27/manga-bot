@@ -1,21 +1,21 @@
-const normalizer = require('normalize-url')
-const _ = require('lodash')
+import normalizer from 'normalize-url'
+import _ from 'lodash'
 
-const RssChannel = require('../models/RssChannel')
-const Room = require('../models/Room')
-const { getChatRoom, replyMessage, isAdmin } = require('./lineSDK')
-const { parse } = require('./RSSParser')
+import RssChannel from '../models/RssChannel'
+import Room from '../models/Room'
+import { getChatRoom, replyMessage, isAdmin } from './lineSDK'
+import { parse } from './RSSParser'
 
 const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/m
 
 // Returns a list of all commands
-function help() {
+export const help = () => {
 
 }
 
 // Adds rss feed to db
 // TODO: remove admin/global add, can just manual add from db
-const addSource = async (event, { src, title, frequency = 30, global = false }) => {
+export const addSource = async (event, { src, title, frequency = 30, global = false }) => {
   if (!urlRegex.test(src)) {
     return replyMessage(event, `Source '${src}' isn't a url`)
   }
@@ -122,7 +122,7 @@ const addSource = async (event, { src, title, frequency = 30, global = false }) 
 }
 
 // Adds rss feed from global sources based on name to room
-const addSourceToRoom = async (event, title, filters) => {
+export const addSourceToRoom = async (event, title, filters) => {
   if (!title) {
     return replyMessage(event, "Feed's title can't be empty")
   }
@@ -159,7 +159,7 @@ const addSourceToRoom = async (event, title, filters) => {
 }
 
 // Update src/title/frequency
-const editSource = async (event, title, property, newVal) => {
+export const editSource = async (event, title, property, newVal) => {
   const channel = await RssChannel.findOne({ title: new RegExp(title, 'i') }).populate('roomIds')
   if (!channel) {
     return replyMessage(event, 'RssChannel not found')
@@ -192,7 +192,7 @@ const editSource = async (event, title, property, newVal) => {
 }
 
 // list global sources
-const listSources = async event => {
+export const listSources = async event => {
   const channels = await RssChannel.find({ global: true })
   const messages = channels.map((channel, i) => {
     return [
@@ -206,7 +206,7 @@ const listSources = async event => {
 }
 
 // list feeds subscribed by room
-const listRoomFeeds = async event => {
+export const listRoomFeeds = async event => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
   const messages = room.feeds.map((feed, i) => {
@@ -228,7 +228,7 @@ const listRoomFeeds = async event => {
   return replyMessage(event, messages.join('\n'))
 }
 
-const addFilter = async (event, title, filters) => {
+export const addFilter = async (event, title, filters) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
 
@@ -246,7 +246,7 @@ const addFilter = async (event, title, filters) => {
   return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${feed.filters.join(', ')}"`)
 }
 
-const removeFilter = async (event, title, filters) => {
+export const removeFilter = async (event, title, filters) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
 
@@ -262,17 +262,4 @@ const removeFilter = async (event, title, filters) => {
   await room.save()
 
   return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${feed.filters.join(', ')}"`)
-}
-
-module.exports = {
-  help,
-
-  addSource,
-  addSourceToRoom,
-  editSource,
-  listSources,
-  listRoomFeeds,
-
-  addFilter,
-  removeFilter,
 }

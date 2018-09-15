@@ -1,18 +1,11 @@
-const cron = require('node-cron')
-const axios = require('axios')
+import cron from 'node-cron'
+import axios from 'axios'
 
-const app = require('./app')
+import app from './app'
+import { BASE_URL, CRON_SCHEDULE } from './config'
 
-const BASE_URL = process.env.BASE_URL || `http://localhost:${app.get('port')}`
-const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '*/30 * * * *'
+const pingUpdateAll = () => axios.get(`${BASE_URL}/updateAll`)
 
-const pingUpdateAll = () => {
-  axios.get(`${BASE_URL}/updateAll`)
-}
+const cronUpdateAll = () => cron.schedule(CRON_SCHEDULE, pingUpdateAll)
 
-const cronUpdateAll = () => {
-  cron.schedule(CRON_SCHEDULE, pingUpdateAll)
-}
-
-app.on('started', cronUpdateAll
-)
+app.on('started', cronUpdateAll)

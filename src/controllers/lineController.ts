@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { WebhookEvent } from "@line/bot-sdk";
 
-const {
+import {
   handleMessage,
   handleFollow,
   handleUnfollow,
   handleJoin,
   handleLeave,
-} = require('../services/lineEvents')
+} from '../services/lineEvents'
 
 export const webhook = async (req: Request, res: Response) => {
   await Promise.all(req.body.events.map(handleEvent))

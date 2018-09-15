@@ -18,7 +18,7 @@ mongoose.connection.on('error', error => {
   process.exit(1)
 })
 
-const app = module.exports = express()
+const app = express()
 
 app.use(morgan('[:date[iso]] :method :url :status :response-time ms'))
 
@@ -37,3 +37,5 @@ const listen = () => app.listen(PORT, () => {
 })
 
 app.on('mongo:open', listen)
+
+export default app

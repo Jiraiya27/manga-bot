@@ -2,7 +2,7 @@ import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent } from 
 
 import Room from '../models/Room'
 import { getChatRoom } from './lineSDK'
-const {
+import {
   addSource,
   addSourceToRoom,
   editSource,
@@ -10,9 +10,9 @@ const {
   listRoomFeeds,
   addFilter,
   removeFilter,
-} = require('./commands')
+} from './commands'
 
-const handleMessage = async (event: MessageEvent) => {
+export const handleMessage = async (event: MessageEvent) => {
   if (event.message.type !== 'text') {
     console.debug('Received unhandled message type:', event.message.type)
     return Promise.resolve()
@@ -32,7 +32,7 @@ const handleMessage = async (event: MessageEvent) => {
 
   if (addSourceRegex.test(text)) {
     const [, src, title, frequency, globalFlag] = <RegExpExecArray>addSourceRegex.exec(text)
-    return addSource(event, { src, title, frequency, isPrivate: !!globalFlag })
+    return addSource(event, { src, title, frequency: Number(frequency), global: !!globalFlag })
   }
 
   if (addToRoomRegex.test(text)) {
@@ -68,7 +68,7 @@ const handleMessage = async (event: MessageEvent) => {
   }
 }
 
-const handleFollow = async (event: FollowEvent) => {
+export const handleFollow = async (event: FollowEvent) => {
   const room = await Room.create({
     id: event.source.userId,
     type: 'user',
@@ -77,7 +77,7 @@ const handleFollow = async (event: FollowEvent) => {
   return Promise.resolve()
 }
 
-const handleUnfollow = async (event: UnfollowEvent) => {
+export const handleUnfollow = async (event: UnfollowEvent) => {
   const room = await Room.deleteOne({
     id: event.source.userId,
   })
@@ -85,7 +85,7 @@ const handleUnfollow = async (event: UnfollowEvent) => {
   return Promise.resolve()
 }
 
-const handleJoin = async (event: JoinEvent) => {
+export const handleJoin = async (event: JoinEvent) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.create({
     id: chatId,
@@ -95,19 +95,11 @@ const handleJoin = async (event: JoinEvent) => {
   return Promise.resolve()
 }
 
-const handleLeave = async (event: LeaveEvent) => {
+export const handleLeave = async (event: LeaveEvent) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.deleteOne({
     id: chatId,
   })
   console.log('Left room:', room)
   return Promise.resolve()
-}
-
-module.exports = {
-  handleMessage,
-  handleFollow,
-  handleUnfollow,
-  handleJoin,
-  handleLeave,
 }

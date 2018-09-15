@@ -64,6 +64,10 @@
   dependencies:
     "@types/node" "*"
 
+"@types/lodash@^4.14.116":
+  version "4.14.116"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.116.tgz#5ccf215653e3e8c786a58390751033a9adca0eb9"
+
 "@types/mime@*":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@types/mime/-/mime-2.0.0.tgz#5a7306e367c539b9f6543499de8dd519fac37a8b"
@@ -90,6 +94,10 @@
   dependencies:
     "@types/express" "*"
 
+"@types/node-cron@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@types/node-cron/-/node-cron-1.2.0.tgz#aefb50be6c09f7e6a1e4c074168698b526c0b543"
+
 "@types/node@*":
   version "10.3.5"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.3.5.tgz#8423cdf6e6fb83433e489900d7600d3b61c8260c"
@@ -97,6 +105,10 @@
 "@types/node@^7.0.31":
   version "7.0.66"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.66.tgz#3d1dc4d6f52e484e843806ff456379f7e6ad5553"
+
+"@types/normalize-url@^1.9.1":
+  version "1.9.1"
+  resolved "https://registry.yarnpkg.com/@types/normalize-url/-/normalize-url-1.9.1.tgz#d19c631dfd938e5113322efc076e74185a7f5aaa"
 
 "@types/range-parser@*":
   version "1.2.2"

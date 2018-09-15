@@ -3,10 +3,10 @@ import moment from 'moment'
 
 import RssChannel, { RssChannelDocument } from '../models/RssChannel'
 
-const { client } = require('../services/lineSDK')
+import { client } from '../services/lineSDK'
 import { parse } from '../services/RSSParser'
-import { RssFeed, RssItem } from 'rss-parser';
-import { RoomDocument } from '../models/Room';
+import { RssFeed, RssItem } from 'rss-parser'
+import { RoomDocument } from '../models/Room'
 
 // skips querying for rooms again
 export const refresh = async (req: Request, res: Response) => {
