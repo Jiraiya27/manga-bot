@@ -69,12 +69,5 @@ jspm_packages/
 # Serverless directories
 .serverless
 
-# Local test/note files
-test.js
-TODO
-
-#DB dumps
-db
-
 # Typescript output
 dist
