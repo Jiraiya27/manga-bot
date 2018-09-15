@@ -72,10 +72,11 @@ const addSource = async (event, { src, title, frequency = 30, global = false }) 
         lastUpdated: new Date(),
       })
       // Add source to room
-      await room.feeds.push({
+      room.feeds.push({
         channelId: channel._id,
         filters: [],
       })
+      await room.save()
       return replyMessage(event, [
         'Added',
         `rss feed src: ${src}`,
