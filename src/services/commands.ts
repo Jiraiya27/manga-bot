@@ -5,8 +5,16 @@ import RssChannel from '../models/RssChannel'
 import Room from '../models/Room'
 import { getChatRoom, replyMessage, isAdmin } from './lineSDK'
 import { parse } from './RSSParser'
+import { ReplyableEvent } from '@line/bot-sdk';
 
 const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/m
+
+type AddSourceOptions = {
+  src: string,
+  title: string,
+  frequency: number,
+  global: boolean,
+}
 
 // Returns a list of all commands
 export const help = () => {
@@ -15,7 +23,7 @@ export const help = () => {
 
 // Adds rss feed to db
 // TODO: remove admin/global add, can just manual add from db
-export const addSource = async (event, { src, title, frequency = 30, global = false }) => {
+export const addSource = async (event: ReplyableEvent, { src, title, frequency = 30, global = false }: AddSourceOptions) => {
   if (!urlRegex.test(src)) {
     return replyMessage(event, `Source '${src}' isn't a url`)
   }
@@ -51,6 +59,7 @@ export const addSource = async (event, { src, title, frequency = 30, global = fa
   if (!global) {
     // Reject if room contains duplicate src/title
     const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+
     for (let i = 0; i < room.feeds.length; i++) {
       const f = room.feeds[i];
       if (f.channelId.title === channelTitle) {
@@ -122,7 +131,7 @@ export const addSource = async (event, { src, title, frequency = 30, global = fa
 }
 
 // Adds rss feed from global sources based on name to room
-export const addSourceToRoom = async (event, title, filters) => {
+export const addSourceToRoom = async (event: ReplyableEvent, title: string, filters: string[]) => {
   if (!title) {
     return replyMessage(event, "Feed's title can't be empty")
   }
@@ -159,7 +168,7 @@ export const addSourceToRoom = async (event, title, filters) => {
 }
 
 // Update src/title/frequency
-export const editSource = async (event, title, property, newVal) => {
+export const editSource = async (event: ReplyableEvent, title: string, property: string, newVal: string) => {
   const channel = await RssChannel.findOne({ title: new RegExp(title, 'i') }).populate('roomIds')
   if (!channel) {
     return replyMessage(event, 'RssChannel not found')
@@ -192,7 +201,7 @@ export const editSource = async (event, title, property, newVal) => {
 }
 
 // list global sources
-export const listSources = async event => {
+export const listSources = async (event: ReplyableEvent) => {
   const channels = await RssChannel.find({ global: true })
   const messages = channels.map((channel, i) => {
     return [
@@ -206,7 +215,7 @@ export const listSources = async event => {
 }
 
 // list feeds subscribed by room
-export const listRoomFeeds = async event => {
+export const listRoomFeeds = async (event: ReplyableEvent) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
   const messages = room.feeds.map((feed, i) => {
@@ -228,7 +237,7 @@ export const listRoomFeeds = async event => {
   return replyMessage(event, messages.join('\n'))
 }
 
-export const addFilter = async (event, title, filters) => {
+export const addFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
 
@@ -246,7 +255,7 @@ export const addFilter = async (event, title, filters) => {
   return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${feed.filters.join(', ')}"`)
 }
 
-export const removeFilter = async (event, title, filters) => {
+export const removeFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
 

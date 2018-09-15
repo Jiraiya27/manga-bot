@@ -2,13 +2,13 @@ import { Schema, model, Document } from 'mongoose'
 
 type RoomFeedsSchema = {
   channelId: Schema.Types.ObjectId,
-  filters: Array<string>,
+  filters: string[],
 }
 
 type RoomSchema = {
   id: string,
   type: 'user' | 'group' | 'room',
-  feeds: Array<RoomFeedsSchema>,
+  feeds: RoomFeedsSchema[],
 }
 
 const RoomFeedsSchema = new Schema({
