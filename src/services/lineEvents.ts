@@ -31,19 +31,19 @@ const handleMessage = async (event: MessageEvent) => {
   console.log({ text })
 
   if (addSourceRegex.test(text)) {
-    const [, src, title, frequency, globalFlag] = addSourceRegex.exec(text)
+    const [, src, title, frequency, globalFlag] = <RegExpExecArray>addSourceRegex.exec(text)
     return addSource(event, { src, title, frequency, isPrivate: !!globalFlag })
   }
 
   if (addToRoomRegex.test(text)) {
-    const [, title,, filters] = addToRoomRegex.exec(text)
+    const [, title,, filters] = <RegExpExecArray>addToRoomRegex.exec(text)
     // escape commas and split args
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return addSourceToRoom(event, title, filtersArray)
   }
 
   if (editSourceRegex.test(text)) {
-    const [, title, property, newVal] = editSourceRegex.exec(text)
+    const [, title, property, newVal] = <RegExpExecArray>editSourceRegex.exec(text)
     return editSource(event, title, property, newVal)
   }
 
@@ -56,13 +56,13 @@ const handleMessage = async (event: MessageEvent) => {
   }
 
   if (addFilterRegex.test(text)) {
-    const [, title,, filters] = addFilterRegex.exec(text)
+    const [, title,, filters] = <RegExpExecArray>addFilterRegex.exec(text)
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return addFilter(event, title, filtersArray)
   }
 
   if (removeFilterRegex.test(text)) {
-    const [, title,, filters] = removeFilterRegex.exec(text)
+    const [, title,, filters] = <RegExpExecArray>removeFilterRegex.exec(text)
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return removeFilter(event, title, filtersArray)
   }
