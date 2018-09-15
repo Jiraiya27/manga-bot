@@ -1,4 +1,7 @@
-const Room = require('../models/Room')
+import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent } from '@line/bot-sdk';
+
+import Room from '../models/Room'
+import { getChatRoom } from './lineSDK'
 const {
   addSource,
   addSourceToRoom,
@@ -9,10 +12,9 @@ const {
   removeFilter,
 } = require('./commands')
 
-const handleMessage = async event => {
-  const { text, type } = event.message
-  if (type !== 'text') {
-    console.debug('Received unhandled message type:', type)
+const handleMessage = async (event: MessageEvent) => {
+  if (event.message.type !== 'text') {
+    console.debug('Received unhandled message type:', event.message.type)
     return Promise.resolve()
   }
 
@@ -23,6 +25,8 @@ const handleMessage = async event => {
   const listRoomFeedsRegex = /^\/list\s*/
   const addFilterRegex = /^\/add-filter (\S+)(\s*filters="(.+)")?/
   const removeFilterRegex = /^\/remove-filter (\S+)(\s*filters="(.+)")?/
+
+  const { text } = event.message
 
   console.log({ text })
 
@@ -64,7 +68,7 @@ const handleMessage = async event => {
   }
 }
 
-const handleFollow = async event => {
+const handleFollow = async (event: FollowEvent) => {
   const room = await Room.create({
     id: event.source.userId,
     type: 'user',
@@ -73,7 +77,7 @@ const handleFollow = async event => {
   return Promise.resolve()
 }
 
-const handleUnfollow = async event => {
+const handleUnfollow = async (event: UnfollowEvent) => {
   const room = await Room.deleteOne({
     id: event.source.userId,
   })
@@ -81,18 +85,20 @@ const handleUnfollow = async event => {
   return Promise.resolve()
 }
 
-const handleJoin = async event => {
+const handleJoin = async (event: JoinEvent) => {
+  const { chatId } = getChatRoom(event)
   const room = await Room.create({
-    id: event.source[`${event.source.type}Id`],
+    id: chatId,
     type: event.source.type,
   })
   console.log('Joined room:', room)
   return Promise.resolve()
 }
 
-const handleLeave = async event => {
+const handleLeave = async (event: LeaveEvent) => {
+  const { chatId } = getChatRoom(event)
   const room = await Room.deleteOne({
-    id: event.source[`${event.source.type}Id`],
+    id: chatId,
   })
   console.log('Left room:', room)
   return Promise.resolve()

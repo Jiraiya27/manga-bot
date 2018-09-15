@@ -1,9 +1,9 @@
 import { Client, ClientConfig, MessageEvent, EventBase, Profile, ReplyableEvent, TextMessage } from '@line/bot-sdk'
 import { LINE_CONFIG, ADMIN_ID } from '../config'
 
-const client = new Client(LINE_CONFIG as ClientConfig)
+export const client = new Client(LINE_CONFIG as ClientConfig)
 
-const getChatRoom = (event: MessageEvent) => {
+export const getChatRoom = (event: EventBase) => {
   const { type, userId } = event.source
   const chatId = 'roomId' in event.source ? event.source.roomId
     : 'groupId' in event.source ? event.source.groupId
@@ -11,7 +11,7 @@ const getChatRoom = (event: MessageEvent) => {
   return { type, userId, chatId }
 }
 
-const getSenderProfile = async (event: MessageEvent) => {
+export const getSenderProfile = async (event: MessageEvent) => {
   const { type, chatId, userId } = getChatRoom(event)
   let profile: Profile | null = null
   try {
@@ -31,7 +31,7 @@ const getSenderProfile = async (event: MessageEvent) => {
   return Promise.resolve(profile)
 }
 
-const getMemberIds = async (event: MessageEvent) => {
+export const getMemberIds = async (event: MessageEvent) => {
   const { type, chatId } = getChatRoom(event)
   let ids: string[] = []
   try {
@@ -49,7 +49,7 @@ const getMemberIds = async (event: MessageEvent) => {
   return Promise.resolve(ids)
 }
 
-const getMemberProfiles = async (event: MessageEvent) => {
+export const getMemberProfiles = async (event: MessageEvent) => {
   const memberIds = await getMemberIds(event)
   return memberIds.map(id => {
     if (event.source.type === 'group') return client.getGroupMemberProfile(event.source.groupId, id)
@@ -58,7 +58,7 @@ const getMemberProfiles = async (event: MessageEvent) => {
   })
 }
 
-const sendMessage = async (event: MessageEvent, message: string | string[]) => {
+export const sendMessage = async (event: MessageEvent, message: string | string[]) => {
   const { chatId } = getChatRoom(event)
   if (typeof message === 'string') {
     return client.pushMessage(chatId, {
@@ -72,7 +72,7 @@ const sendMessage = async (event: MessageEvent, message: string | string[]) => {
   }
 }
 
-const replyMessage = async (event: ReplyableEvent, message: string | string[]) => {
+export const replyMessage = async (event: ReplyableEvent, message: string | string[]) => {
   if (typeof message === 'string') {
     return client.replyMessage(event.replyToken, {
       type: 'text',
@@ -85,15 +85,4 @@ const replyMessage = async (event: ReplyableEvent, message: string | string[]) =
   }
 }
 
-const isAdmin = (event: EventBase) => typeof ADMIN_ID === 'string' && ADMIN_ID === event.source.userId
-
-module.exports = {
-  client,
-  getChatRoom,
-  getSenderProfile,
-  getMemberIds,
-  getMemberProfiles,
-  sendMessage,
-  replyMessage,
-  isAdmin,
-}
+export const isAdmin = (event: EventBase) => typeof ADMIN_ID === 'string' && ADMIN_ID === event.source.userId
