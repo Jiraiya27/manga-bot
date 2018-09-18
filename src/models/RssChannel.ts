@@ -10,7 +10,7 @@ export type RssItemSchema = {
   isoDate: Date,
 }
 
-type RssChannelSchema = {
+export type RssChannelSchema = {
   src: string,
   title: string,
   items: RssItemSchema[],
@@ -53,3 +53,5 @@ export type RssChannelDocument = Document & RssChannelSchema
 const RssChannel = model<RssChannelDocument>('rss_channel', RssChannelSchema)
 
 export default RssChannel
+
+export type EditableRssChannelProperties = 'src' | 'title' | 'frequency'

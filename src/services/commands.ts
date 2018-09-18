@@ -1,8 +1,9 @@
 import normalizer from 'normalize-url'
 import _ from 'lodash'
+import { Schema } from 'mongoose'
 
-import RssChannel from '../models/RssChannel'
-import Room from '../models/Room'
+import RssChannel, { EditableRssChannelProperties } from '../models/RssChannel'
+import Room, { isFeedsPopulated, RoomDocument } from '../models/Room'
 import { getChatRoom, replyMessage, isAdmin } from './lineSDK'
 import { parse } from './RSSParser'
 import { ReplyableEvent } from '@line/bot-sdk';
@@ -59,6 +60,8 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
   if (!global) {
     // Reject if room contains duplicate src/title
     const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+    if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
+    if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
 
     for (let i = 0; i < room.feeds.length; i++) {
       const f = room.feeds[i];
@@ -81,10 +84,11 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
         lastUpdated: new Date(),
       })
       // Add source to room
-      await room.feeds.push({
+      room.feeds.push({
         channelId: channel._id,
         filters: [],
       })
+      await room.save()
       return replyMessage(event, [
         'Added',
         `rss feed src: ${src}`,
@@ -144,17 +148,24 @@ export const addSourceToRoom = async (event: ReplyableEvent, title: string, filt
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId })
 
-  if (channel.roomIds.includes(room._id.toString())) {
+  if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
+  if (isFeedsPopulated(room.feeds)) return Promise.reject('Room feed should not be populated')
+
+  const channelRoomIds = <Schema.Types.ObjectId[]>channel.roomIds
+
+  if (channelRoomIds.includes(room._id.toString())) {
     return replyMessage(event, `This room is already subscribed to channel: ${channel.title}`)
   }
 
   const existingFeed = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
 
+  // Add filter if already exists
+  // Create new ids in room and channel if new
   if (existingFeed) {
     existingFeed.filters = [...new Set([...existingFeed.filters, ...filters])]
   } else {
     room.feeds.push({ channelId: channel._id, filters })
-    channel.roomIds.push(room._id)
+    channelRoomIds.push(room._id)
     await channel.save()
   }
 
@@ -175,7 +186,8 @@ export const editSource = async (event: ReplyableEvent, title: string, property:
   }
 
   const { chatId } = getChatRoom(event)
-  const stringifiedIds = channel.roomIds.map(id => id.toString())
+  const roomIds = <RoomDocument[]>channel.roomIds
+  const stringifiedIds = roomIds.map(id => id.toString())
   if (!stringifiedIds.includes(chatId)) {
     return replyMessage(event, `This rooms is not subscribed to feed ${title}`)
   }
@@ -193,7 +205,7 @@ export const editSource = async (event: ReplyableEvent, title: string, property:
   }
 
   // TODO: validate each property from model itself
-  channel[property] = newVal
+  channel[<EditableRssChannelProperties>property] = newVal
   await channel.save()
 
   // TODO: model static function to print details
@@ -218,6 +230,8 @@ export const listSources = async (event: ReplyableEvent) => {
 export const listRoomFeeds = async (event: ReplyableEvent) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+  if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
+  if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
   const messages = room.feeds.map((feed, i) => {
     const message = [
       `${i + 1}. ${feed.channelId.title}`,
@@ -241,6 +255,9 @@ export const addFilter = async (event: ReplyableEvent, title: string, filters: s
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
 
+  if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
+  if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
+
   const feed = room.feeds.find(f => f.channelId.title.toLowerCase().trim() === title.toLowerCase().trim())
   if (!feed) {
     return replyMessage(event, 'RssChannel not found in this room')
@@ -258,6 +275,9 @@ export const addFilter = async (event: ReplyableEvent, title: string, filters: s
 export const removeFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+
+  if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
+  if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
 
   const feed = room.feeds.find(f => f.channelId.title.toLowerCase().trim() === title.toLowerCase().trim())
   if (!feed) {

@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import moment from 'moment'
 
 import RssChannel, { RssChannelDocument } from '../models/RssChannel'
+import { isFeedsPopulated } from '../models/Room'
 
 import { client } from '../services/lineSDK'
 import { parse } from '../services/RSSParser'
@@ -44,6 +45,7 @@ export const refresh = async (req: Request, res: Response) => {
       // Update subscribed rooms based on channels
       const rooms = <RoomDocument[]>channel.roomIds
       await Promise.all(rooms.map(async room => {
+        if (isFeedsPopulated(room.feeds)) return Promise.reject('Room should not be populated')
         // Get room's filters for this feed
         const feed = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
         if (feed === undefined) {
