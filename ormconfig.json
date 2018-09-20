@@ -1,0 +1,11 @@
+{
+  "type": "postgres",
+  "synchronize": false,
+  "logging": true,
+  "entities": [
+    "src/entities/**/*.ts"
+  ],
+  "migrations": [
+    "src/migrations/**/*.ts"
+  ]
+}
