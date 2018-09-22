@@ -1,6 +1,5 @@
 import normalizer from 'normalize-url'
 import _ from 'lodash'
-import { Schema } from 'mongoose'
 
 import { getChatRoom, replyMessage, isAdmin } from './lineSDK'
 import parse from './RSSParser'
@@ -275,7 +274,7 @@ export const listRoomFeeds = async (event: ReplyableEvent) => {
 }
 
 export const removeSourceFromRoom = async (event: ReplyableEvent, title: string) => {
-  
+
 }
 
 export const addFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {
