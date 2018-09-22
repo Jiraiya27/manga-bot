@@ -11,6 +11,6 @@ export class RoomFeeds extends BaseEntity{
   @ManyToOne(type => Feed, feed => feed.roomFeeds, { primary: true })
   feed: Feed
 
-  @Column({ type: 'text', array: true })
+  @Column({ type: 'json', default: [] })
   filters: string[]
 }

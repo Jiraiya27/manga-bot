@@ -1,14 +1,6 @@
 import { BaseEntity, Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm'
 import { RoomFeeds } from './RoomFeeds'
-
-type RssItemm = {
-  title: string,
-  link: string,
-  pubDate: string,
-  content: string,
-  guid: string,
-  isoDate: Date, 
-}
+import { RssItem } from 'rss-parser'
 
 @Entity()
 export class Feed extends BaseEntity{
@@ -17,7 +9,7 @@ export class Feed extends BaseEntity{
   id: string
 
   @Column({ type: 'text' })
-  src: string
+  source: string
 
   @Column({ type: 'text' })
   title: string
@@ -29,11 +21,19 @@ export class Feed extends BaseEntity{
   global: boolean
 
   @Column({ type: 'timestamptz' })
-  lastUpdate: Date
+  lastUpdated: Date
 
   @Column({ type: 'json', nullable: true })
-  lastItem: RssItemm
+  lastItem: RssItem
 
   @OneToMany(type => RoomFeeds, roomFeeds => roomFeeds.feed)
   roomFeeds: RoomFeeds[]
+
+  static findPastUpdate() {
+    return this.createQueryBuilder('feed')
+      .where("feed.lastUpdated < current_timestamp - interval '1 mins' * feed.frequency")
+      .leftJoinAndSelect('feed.roomFeeds', 'roomFeeds')
+      .leftJoinAndSelect('roomFeeds.room', 'room')
+      .getMany()
+  }
 }

@@ -7,7 +7,7 @@ import {
   handleUnfollow,
   handleJoin,
   handleLeave,
-} from '../services/lineEvents'
+} from './lineEventsController'
 
 export const webhook = async (req: Request, res: Response) => {
   await Promise.all(req.body.events.map(handleEvent))
@@ -17,8 +17,6 @@ export const webhook = async (req: Request, res: Response) => {
 }
 
 const handleEvent = async (event: WebhookEvent) => {
-  console.debug('Event:', event)
-
   switch (event.type) {
     case 'message':
       return handleMessage(event)

@@ -1,67 +1,51 @@
 import { Request, Response } from 'express'
 import moment from 'moment'
 
-import RssChannel, { RssChannelDocument } from '../models/RssChannel'
-import { isFeedsPopulated } from '../models/Room'
-
 import { client } from '../services/lineSDK'
-import { parse } from '../services/RSSParser'
+import parseRss from '../services/RSSParser'
 import { RssFeed, RssItem } from 'rss-parser'
-import { RoomDocument } from '../models/Room'
+import { Feed } from '../entities/Feed'
 
 // skips querying for rooms again
 export const refresh = async (req: Request, res: Response) => {
   try {
-    const channels = await RssChannel.find({
-      $where: 'this.lastUpdated < new Date(new Date().getTime() - this.frequency * 60000)',
-    }).populate({ path: 'roomIds', model: 'room' })
+    const feeds = await Feed.findPastUpdate()
 
+    // Feed cache for repeating sources
     const cache: { [key: string]: RssFeed } = {}
 
-    await Promise.all(channels.map(async channel => {
-      const feed = cache[channel.src] || await parse(channel.src)
-      const lastUpdatedMoment = moment(channel.lastUpdated)
+    await Promise.all(feeds.map(async feed => {
+      const rss = cache[feed.source] || await parseRss(feed.source)
+      const lastUpdatedMoment = moment(feed.lastUpdated)
 
-      // Filter out new items
       let newItems: RssItem[] = []
       // ms doesn't use 24 Hr format and doesn't tell AM/PM
       // niceoppai uses GMT +7
       if (feed.title === 'MangaStream Releases' || feed.title === 'Niceoppai Recent Updates') {
-        const lastItem = channel.items[0]
-        for (let i = 0; i < feed.items.length; i++) {
-          const item = feed.items[i];
-          if (item.title === lastItem.title) break;
+        for (let i = 0; i < rss.items.length; i++) {
+          const item = rss.items[i];
+          // Assuming that order remains the same, get new items until last known item
+          if (item.title === feed.lastItem.title) break;
           newItems.push(item)
         }
       } else {
-        newItems = feed.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
+        // get new items based on last updated time
+        newItems = rss.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
       }
 
-      console.log({ title: channel.title, newItems })
+      // Cache rss response, probably won't work since requests are parallel?
+      cache[feed.source] = rss
 
-      // Cache response, might not work if requests are in parallel anyway
-      cache[channel.src] = feed
-
-      // Update subscribed rooms based on channels
-      const rooms = <RoomDocument[]>channel.roomIds
-      await Promise.all(rooms.map(async room => {
-        if (isFeedsPopulated(room.feeds)) return Promise.reject('Room should not be populated')
-        // Get room's filters for this feed
-        const feed = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
-        if (feed === undefined) {
-          return console.error(`Room id: ${room.id} doesn't match with channel id: ${channel._id}`)
-        }
-        // Update only items that passes room's filter for that feed
-        // FIX null/undefined check in typescript
-        // What's the point of handling it above if it's still undefined
-        const filteredItems = feed && feed.filters.length > 0
-          // TODO: Fix parser types to not be optional?
-          // Might need to force some required types to be non-optional and provide js checks before save/ is required in model
-          ? newItems.filter(item => feed.filters.filter(filter => new RegExp(filter, 'i').test(item.title || '')).length > 0)
+      // Update subscribed rooms
+      await Promise.all(feed.roomFeeds.map(async roomFeed => {
+        // Apply filters to title
+        const filteredItems = roomFeed.filters.length > 0
+          ? newItems.filter(item => roomFeed.filters.filter(filter => new RegExp(filter, 'i').test(item.title || '')).length > 0)
           : newItems
+
         // Send message to update room
         await Promise.all(filteredItems.map(newItem => {
-          return client.pushMessage(room.id, {
+          return client.pushMessage(roomFeed.room.id, {
             type: 'text',
             text: `${newItem.title} : ${newItem.link}`,
           })
@@ -69,16 +53,14 @@ export const refresh = async (req: Request, res: Response) => {
       }))
 
       // Update channel time and items
-      /* eslint-disable no-param-reassign */
-      // TODO: consolidate parser items with actual stored item
-      // Difference in presence here
-      channel.items = <RssChannelDocument['items']>feed.items
-      channel.lastUpdated = new Date()
-      await channel.save()
+      feed.lastItem = rss.items[0]
+      feed.lastUpdated = new Date()
+      await feed.save()
     }))
 
     return res.send('Success')
   } catch (error) {
+    // Error from @lineSDK
     if (error.originalError) {
       console.error(error.originalError.response)
     } else {

@@ -1,16 +1,17 @@
-import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent } from '@line/bot-sdk';
+import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent } from '@line/bot-sdk'
 
-import Room from '../models/Room'
-import { getChatRoom } from './lineSDK'
+import { Room } from '../entities/Room'
+import { getChatRoom } from '../services/lineSDK'
 import {
+  addFilter,
   addSource,
   addSourceToRoom,
   editSource,
-  listSources,
+  help,
   listRoomFeeds,
-  addFilter,
+  listSources,
   removeFilter,
-} from './commands'
+} from '../services/commands'
 
 export const handleMessage = async (event: MessageEvent) => {
   if (event.message.type !== 'text') {
@@ -18,18 +19,26 @@ export const handleMessage = async (event: MessageEvent) => {
     return Promise.resolve()
   }
 
+  const addFilterRegex = /^\/add-filter (\S+)(\s*filters="(.+)")?/
   const addSourceRegex = /^\/add-source (\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
   const addToRoomRegex = /^\/add (\S+)(\s*--filters="(.+)")?/
   const editSourceRegex = /^\/edit (\S+)(\s+\S+)?(\s+\S+)?/
+  const helpRegex = /^\/help/
   const listGlobalsRegex = /^\/list-global\s*/
   const listRoomFeedsRegex = /^\/list\s*/
-  const addFilterRegex = /^\/add-filter (\S+)(\s*filters="(.+)")?/
   const removeFilterRegex = /^\/remove-filter (\S+)(\s*filters="(.+)")?/
 
   const { text } = event.message
 
   console.log({ text })
 
+  if (helpRegex.test(text)) {
+    return help(event)
+  }
+
+  /**
+   * Source
+   */
   if (addSourceRegex.test(text)) {
     const [, src, title, frequency, globalFlag] = <RegExpExecArray>addSourceRegex.exec(text)
     return addSource(event, { src, title, frequency: Number(frequency), global: !!globalFlag })
@@ -55,6 +64,9 @@ export const handleMessage = async (event: MessageEvent) => {
     return listRoomFeeds(event)
   }
 
+  /**
+   * Filter
+   */
   if (addFilterRegex.test(text)) {
     const [, title,, filters] = <RegExpExecArray>addFilterRegex.exec(text)
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
@@ -69,37 +81,38 @@ export const handleMessage = async (event: MessageEvent) => {
 }
 
 export const handleFollow = async (event: FollowEvent) => {
-  const room = await Room.create({
-    id: event.source.userId,
-    type: 'user',
+  const { chatId, type } = getChatRoom(event)
+  const room = Room.create({
+    id: chatId,
+    type,
   })
-  console.log('Followd room:', room)
-  return Promise.resolve()
+  await room.save()
+  console.log('Followed room:', room)
 }
 
 export const handleUnfollow = async (event: UnfollowEvent) => {
-  const room = await Room.deleteOne({
-    id: event.source.userId,
+  const { chatId } = getChatRoom(event)
+  Room.delete({ })
+  const room = await Room.delete({
+    id: chatId,
   })
-  console.log('Unfollowd room:', room)
-  return Promise.resolve()
+  console.log('Unfollowed room:', room)
 }
 
 export const handleJoin = async (event: JoinEvent) => {
-  const { chatId } = getChatRoom(event)
-  const room = await Room.create({
+  const { chatId, type } = getChatRoom(event)
+  const room = Room.create({
     id: chatId,
-    type: event.source.type,
+    type,
   })
+  await room.save()
   console.log('Joined room:', room)
-  return Promise.resolve()
 }
 
 export const handleLeave = async (event: LeaveEvent) => {
   const { chatId } = getChatRoom(event)
-  const room = await Room.deleteOne({
+  const room = await Room.delete({
     id: chatId,
   })
   console.log('Left room:', room)
-  return Promise.resolve()
 }

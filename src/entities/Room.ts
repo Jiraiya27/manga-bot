@@ -7,11 +7,8 @@ export class Room extends BaseEntity{
   @PrimaryColumn()
   id: string
 
-  @Column({
-    enum: ['user', 'group', 'room'],
-    type: 'text',
-  })
-  type: string
+  @Column({ type: 'text' })
+  type: 'user' | 'group' | 'room'
 
   @OneToMany(type => RoomFeeds, roomFeeds => roomFeeds.room)
   roomFeeds: RoomFeeds[]
