@@ -11,6 +11,7 @@ import {
   listRoomFeeds,
   listSources,
   removeFilter,
+  removeSourceFromRoom,
 } from '../services/commands'
 
 export const handleMessage = async (event: MessageEvent) => {
@@ -19,14 +20,15 @@ export const handleMessage = async (event: MessageEvent) => {
     return Promise.resolve()
   }
 
-  const addFilterRegex = /^\/add-filter (\S+)(\s*filters="(.+)")?/
-  const addSourceRegex = /^\/add-source (\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
-  const addToRoomRegex = /^\/add (\S+)(\s*--filters="(.+)")?/
-  const editSourceRegex = /^\/edit (\S+)(\s+\S+)?(\s+\S+)?/
+  const addFilterRegex = /^\/add-filter\s+(\S+)(\s*filters="(.+)")?/
+  const addSourceRegex = /^\/add-source\s+(\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
+  const addToRoomRegex = /^\/add\s+(\S+)(\s*--filters="(.+)")?/
+  const editSourceRegex = /^\/edit\s+(\S+)(\s+\S+)?(\s+\S+)?/
   const helpRegex = /^\/help/
-  const listGlobalsRegex = /^\/list-global\s*/
-  const listRoomFeedsRegex = /^\/list\s*/
-  const removeFilterRegex = /^\/remove-filter (\S+)(\s*filters="(.+)")?/
+  const listGlobalsRegex = /^\/list-global/
+  const listRoomFeedsRegex = /^\/list/
+  const removeFilterRegex = /^\/remove-filter\s+(\S+)(\s*filters="(.+)")?/
+  const removeSourceFromRoomRegex = /^\/remove-source\s+(\S+)/
 
   const { text } = event.message
 
