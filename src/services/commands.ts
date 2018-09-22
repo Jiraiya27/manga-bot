@@ -7,6 +7,7 @@ import Room, { isFeedsPopulated, RoomDocument } from '../models/Room'
 import { getChatRoom, replyMessage, isAdmin } from './lineSDK'
 import { parse } from './RSSParser'
 import { ReplyableEvent } from '@line/bot-sdk';
+import { Feed } from '../entities/Feed'
 
 const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/m
 
@@ -18,8 +19,14 @@ type AddSourceOptions = {
 }
 
 // Returns a list of all commands
-export const help = () => {
-
+export const help = async () => {
+  const feed = Feed.create({
+    src: 'src',
+    title: 'csdcs',
+    lastUpdate: new Date(),
+  })
+  await feed.save()
+  console.log({ feed })
 }
 
 // Adds rss feed to db

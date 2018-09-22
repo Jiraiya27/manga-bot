@@ -31,7 +31,7 @@ export class Feed extends BaseEntity{
   @Column({ type: 'timestamptz' })
   lastUpdate: Date
 
-  @Column({ type: 'json' })
+  @Column({ type: 'json', nullable: true })
   lastItem: RssItemm
 
   @OneToMany(type => RoomFeeds, roomFeeds => roomFeeds.feed)

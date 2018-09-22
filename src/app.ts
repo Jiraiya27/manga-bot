@@ -1,22 +1,29 @@
+import 'reflect-metadata';
 import express, { Request, Response, NextFunction } from 'express'
 import morgan from 'morgan'
-import * as mongoose from 'mongoose'
 import { middleware } from '@line/bot-sdk'
+import { createConnection } from 'typeorm'
+import path from 'path'
 
-import { LINE_CONFIG, MONGODB_URI, PORT } from './config'
+import { LINE_CONFIG, DATABASE_URL, DATABASE_LOGGING, PORT } from './config'
 import { webhook } from './controllers/lineController'
 import { refresh } from './controllers/feedsController'
 
-mongoose.connect(MONGODB_URI, { useNewUrlParser: true })
-mongoose.connection.once('open', () => {
-  console.log('Connected to MongoDB')
-  app.emit('mongo:open')
-})
-mongoose.connection.on('error', error => {
-  console.log('MongoDB connection failed with error:', error)
-  console.log('Terminating process with status 1')
-  process.exit(1)
-})
+createConnection({
+  type: 'postgres',
+  url: DATABASE_URL,
+  logging: DATABASE_LOGGING,
+  synchronize: true,
+  entities: [path.join(__dirname, '/entities/**/*.js')],
+  migrations: [path.join(__dirname  + '/migrations/**/*.js')],
+}).then(() => {
+    app.emit('db:connected')
+    console.log('DB connected')
+  })
+  .catch(error => {
+    console.error('DB connection error:', error)
+    process.exitCode = 1
+  })
 
 const app = express()
 
@@ -36,6 +43,6 @@ const listen = () => app.listen(PORT, () => {
   app.emit('started')
 })
 
-app.on('mongo:open', listen)
+app.on('db:connected', listen)
 
 export default app
