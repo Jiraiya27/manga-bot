@@ -274,6 +274,10 @@ export const listRoomFeeds = async (event: ReplyableEvent) => {
   return replyMessage(event, messages.join('\n'))
 }
 
+export const removeSourceFromRoom = async (event: ReplyableEvent, title: string) => {
+  
+}
+
 export const addFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {
   const { chatId } = getChatRoom(event)
   const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })

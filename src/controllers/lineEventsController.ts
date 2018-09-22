@@ -66,6 +66,11 @@ export const handleMessage = async (event: MessageEvent) => {
     return listRoomFeeds(event)
   }
 
+  if (removeSourceFromRoomRegex.test(text)) {
+    const [, title] = <RegExpExecArray>removeSourceFromRoomRegex.exec(text)
+    return removeSourceFromRoom(event, title)
+  }
+
   /**
    * Filter
    */
