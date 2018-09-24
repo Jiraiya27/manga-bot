@@ -5,10 +5,14 @@ import { Feed } from './Feed'
 
 @Entity()
 export class RoomFeeds extends BaseEntity{
-  @ManyToOne(type => Room, room => room.roomFeeds, { primary: true })
+  @Column({ type: 'text' })
+  roomId: string
+  @ManyToOne(type => Room, room => room.roomFeeds, { primary: true, onDelete: 'CASCADE' })
   room: Room
 
-  @ManyToOne(type => Feed, feed => feed.roomFeeds, { primary: true })
+  @Column({ type: 'text' })
+  feedId: string
+  @ManyToOne(type => Feed, feed => feed.roomFeeds, { primary: true, onDelete: 'CASCADE' })
   feed: Feed
 
   @Column({ type: 'json', default: [] })

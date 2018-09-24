@@ -158,77 +158,75 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
 
 // Adds rss feed from global sources based on name to room
 export const addSourceToRoom = async (event: ReplyableEvent, title: string, filters: string[]) => {
+  title = title.toLowerCase().trim()
   if (!title) {
     return replyMessage(event, "Feed's title can't be empty")
   }
 
-  const channel = await RssChannel.findOne({ title: new RegExp(title, 'i') })
-  if (!channel) {
-    return replyMessage(event, `Rss Feed with title: ${title} not found`)
+  const feed = await Feed.findOne({ where: { title } })
+  if (!feed) {
+    return replyMessage(event, `Feed with title: ${title} not found`)
   }
 
   const { chatId } = getChatRoom(event)
-  const room = await Room.findOne({ id: chatId })
+  const room = await Room.findOne({ where: { id: chatId }, relations: ['roomFeeds'] })
 
   if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
-  if (isFeedsPopulated(room.feeds)) return Promise.reject('Room feed should not be populated')
 
-  const channelRoomIds = <Schema.Types.ObjectId[]>channel.roomIds
-
-  if (channelRoomIds.includes(room._id.toString())) {
-    return replyMessage(event, `This room is already subscribed to channel: ${channel.title}`)
-  }
-
-  const existingFeed = room.feeds.find(f => f.channelId.toString() === channel._id.toString())
+  const existingRoomFeed = room.roomFeeds.find(rf => rf.feedId === feed.id)
+  const existingFilter = existingRoomFeed ? [...existingRoomFeed.filters] : undefined
 
   // Add filter if already exists
-  // Create new ids in room and channel if new
-  if (existingFeed) {
-    existingFeed.filters = [...new Set([...existingFeed.filters, ...filters])]
+  // Create new roomFeed if new
+  let newFilter = []
+  if (existingRoomFeed) {
+    newFilter = [...new Set([...existingRoomFeed.filters, ...filters])]
+    existingRoomFeed.filters = newFilter
+    await existingRoomFeed.save()
   } else {
-    room.feeds.push({ channelId: channel._id, filters })
-    channelRoomIds.push(room._id)
-    await channel.save()
+    newFilter = filters
+    const roomFeed = RoomFeeds.create({
+      feedId: feed.id,
+      roomId: room.id,
+      filters: newFilter,
+    })
+    await roomFeed.save()
   }
 
-  await room.save()
-  const message = filters.length > 0
-    ? existingFeed
-      ? `Update feed ${channel.title}'s filters to be ${existingFeed.filters.join(', ')}`
-      : `Added feed ${channel.title} with filters as ${filters}`
-    : `Added feed ${channel.title} without any filter`
+  const message = existingRoomFeed && existingFilter
+    ? `Update feed ${feed.title}'s filters from ${existingFilter.join(', ')} to be ${existingRoomFeed.filters.join(', ')}`
+    : newFilter.length > 0
+      ? `Added feed ${feed.title} with filter ${newFilter.join(', ')}`
+      : `Added feed ${feed.title} without any filter`
   return replyMessage(event, message)
 }
 
 // Update src/title/frequency
 export const editSource = async (event: ReplyableEvent, title: string, property: string, newVal: string) => {
-  const channel = await RssChannel.findOne({ title: new RegExp(title, 'i') }).populate('roomIds')
-  if (!channel) {
-    return replyMessage(event, 'RssChannel not found')
-  }
-
+  newVal = newVal.toLowerCase().trim()
   const { chatId } = getChatRoom(event)
-  const roomIds = <RoomDocument[]>channel.roomIds
-  const stringifiedIds = roomIds.map(id => id.toString())
-  if (!stringifiedIds.includes(chatId)) {
-    return replyMessage(event, `This rooms is not subscribed to feed ${title}`)
-  }
 
-  if (channel.global) {
+  const feed = await Feed.createQueryBuilder('feed')
+    .where('feed.title = :title', { title: title.toLocaleLowerCase().trim() })
+    .innerJoin('feed.roomFeeds', 'roomFeed', 'roomFeed.roomId = :chatId', { chatId })
+    .getOne()
+
+  if (!feed) return replyMessage(event, 'RssChannel not found')
+
+  if (feed.global) {
     return replyMessage(event, 'Cannot edit global source')
   }
 
-  if (!['src', 'title', 'frequency'].includes(property)) {
-    return replyMessage(event, 'Can edit only src, title, and frequency')
+  if (property !== 'title' && property !== 'frequency') {
+    return replyMessage(event, 'Can edit only source, title, and frequency')
   }
 
   if (!newVal) {
     return replyMessage(event, 'New value cannot be empty')
   }
 
-  // TODO: validate each property from model itself
-  channel[<EditableRssChannelProperties>property] = newVal
-  await channel.save()
+  feed[property] = newVal
+  await feed.save()
 
   // TODO: model static function to print details
   return replyMessage(event, `Updated ${property} to ${newVal}`)
@@ -236,12 +234,12 @@ export const editSource = async (event: ReplyableEvent, title: string, property:
 
 // list global sources
 export const listSources = async (event: ReplyableEvent) => {
-  const channels = await RssChannel.find({ global: true })
-  const messages = channels.map((channel, i) => {
+  const feeds = await Feed.find({ where: { global: true } })
+  const messages = feeds.map((feed, i) => {
     return [
-      `${i + 1}. ${channel.title}`,
-      `Src - ${channel.src}`,
-      `Refresh - ${channel.frequency} mins`,
+      `${i + 1}. ${feed.title}`,
+      `Src - ${feed.source}`,
+      `Refresh - ${feed.frequency} mins`,
     ].join('\n')
   })
   if (messages.length === 0) return replyMessage(event, 'There are no global feeds. Admin go do your job.')
@@ -251,70 +249,92 @@ export const listSources = async (event: ReplyableEvent) => {
 // list feeds subscribed by room
 export const listRoomFeeds = async (event: ReplyableEvent) => {
   const { chatId } = getChatRoom(event)
-  const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
-  if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
-  if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
-  const messages = room.feeds.map((feed, i) => {
+  const feeds = await Feed.createQueryBuilder('feed')
+    .innerJoinAndSelect('feed.roomFeeds', 'roomFeed', 'roomFeed.roomId = :chatId', { chatId })
+    .getMany()
+
+  const messages = feeds.map((feed, i) => {
     const message = [
-      `${i + 1}. ${feed.channelId.title}`,
-      `Src - ${feed.channelId.src}`,
-      `Refresh - ${feed.channelId.frequency} mins`,
+      `${i + 1}. ${feed.title}`,
+      `Src - ${feed.source}`,
+      `Refresh - ${feed.frequency} mins`,
     ]
-    if (feed.filters.length > 0) message.push(`Filters - ${feed.filters}`)
+    if (feed.roomFeeds[0].filters.length > 0) message.push(`Filters - ${feed.roomFeeds[0].filters}`)
     return message.join('\n')
   })
   if (messages.length === 0) {
     return replyMessage(
       event,
-      'This room is not subscribed to any feed. '
-      + 'Quick add from the global feed to get started.',
+      'This room is not subscribed to any feed.'
+      + ' Quick add from the global feed to get started.',
     )
   }
   return replyMessage(event, messages.join('\n'))
 }
 
 export const removeSourceFromRoom = async (event: ReplyableEvent, title: string) => {
+  const { chatId } = getChatRoom(event)
+  title = title.toLocaleLowerCase().trim()
 
+  const res = await RoomFeeds.createQueryBuilder('roomFeed')
+  .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+  .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
+  .delete()
+  .execute()
+
+  console.log({ res })
+
+  // Depending on result return message
 }
 
 export const addFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {
   const { chatId } = getChatRoom(event)
-  const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+  title = title.toLocaleLowerCase().trim()
 
-  if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
-  if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
+  if (!filters.length) return replyMessage(event, 'No filters supplied')
 
-  const feed = room.feeds.find(f => f.channelId.title.toLowerCase().trim() === title.toLowerCase().trim())
-  if (!feed) {
-    return replyMessage(event, 'RssChannel not found in this room')
-  }
+  const roomFeed = await RoomFeeds.createQueryBuilder('roomFeed')
+    .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+    .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
+    .getOne()
 
-  const prevFilters = [...feed.filters]
+  console.log({ roomFeed })
+  
+  if (!roomFeed) return replyMessage(event, 'Feed not found in this room')
 
-  feed.filters = [...new Set([...feed.filters, ...filters])]
+  const prevFilters = roomFeed.filters
 
-  await room.save()
+  roomFeed.filters = [...new Set([...prevFilters, ...filters])]
 
-  return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${feed.filters.join(', ')}"`)
+  await roomFeed.save()
+
+  return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${roomFeed.filters.join(', ')}"`)
 }
 
 export const removeFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {
   const { chatId } = getChatRoom(event)
-  const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
+  title = title.toLocaleLowerCase().trim()
 
-  if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
-  if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
+  const roomFeed = await RoomFeeds.createQueryBuilder('roomFeed')
+    .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+    .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
+    .getOne()
 
-  const feed = room.feeds.find(f => f.channelId.title.toLowerCase().trim() === title.toLowerCase().trim())
-  if (!feed) {
-    return replyMessage(event, 'RssChannel not found in this room')
-  }
+  console.log({ roomFeed })
 
-  const prevFilters = [...feed.filters]
+  if (!roomFeed) return replyMessage(event, 'Feed not found in this room')
 
-  feed.filters = _.difference(prevFilters, filters)
+  const prevFilters = roomFeed.filters
 
-  await room.save()
+  // Remove all filters if not supplied
+  roomFeed.filters = filters.length
+    ?  _.difference(prevFilters, filters)
+    : []
 
-  return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${feed.filters.join(', ')}"`)
+  await roomFeed.save()
+
+  const message = filters.length
+    ? `Update filter for ${title} from "${prevFilters.join(', ')}" to "${roomFeed.filters.join(', ')}"`
+    : `Removed filters fro ${title}`
+  return replyMessage(event, message)
 }
