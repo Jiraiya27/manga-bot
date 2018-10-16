@@ -1,4 +1,4 @@
-import normalizer from 'normalize-url'
+import normalizeUrl from 'normalize-url'
 import _ from 'lodash'
 
 import { getChatRoom, replyMessage, isAdmin } from './lineSDK'
@@ -7,6 +7,7 @@ import { ReplyableEvent } from '@line/bot-sdk';
 import { Feed } from '../entities/Feed'
 import { Room } from '../entities/Room'
 import { RoomFeeds } from '../entities/RoomFeeds'
+import { RssFeed } from 'rss-parser';
 
 const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/m
 
@@ -50,67 +51,75 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
   if (!urlRegex.test(src)) {
     return replyMessage(event, `Source '${src}' isn't a url`)
   }
-  const normalizedSrc = normalizer(src)
-  const feed = await parse(normalizedSrc).catch(error => {
+  const normalizedSrc = normalizeUrl(src)
+  const feed: RssFeed = await parse(normalizedSrc).catch(error => {
     return replyMessage(event, error.message)
   })
-
-  const channelTitle = title || feed.title
-
-  // Can't duplicate with global source
-  const globalChannels = await RssChannel.findOne({
-    global: true,
-    $or: [
-      { src: normalizedSrc },
-      { title: channelTitle },
-    ],
-  })
-  if (globalChannels) {
-    if (src === normalizedSrc) return replyMessage(event, 'Global channel with same src exists')
-    return replyMessage(event, 'Global channel with same title exists')
-  }
 
   if (Number.isNaN(Number(frequency))) {
     return replyMessage(event, `Frequency ${frequency} isn't a number`)
   }
+
+  const channelTitle = title || feed.title
+
+  // Can't duplicate with global source
+  const globalFeeds = await Feed.createQueryBuilder()
+    .where('global = true')
+    .orWhere('source = :source', { source: normalizedSrc })
+    .orWhere('title = :title', { title: channelTitle })
+    .getMany()
+
+  if (globalFeeds.length) {
+    // either repeat of global source/title exists
+    if (globalFeeds.find(f => f.source === normalizedSrc)) {
+      return replyMessage(event, 'Global channel with same source exists')
+    }
+    return replyMessage(event, 'Global channel with same title exists') 
+  }
+
 
   if (global && !isAdmin(event)) {
     return replyMessage(event, 'You cannot add a global source')
   }
 
   const { chatId } = getChatRoom(event)
+
   if (!global) {
     // Reject if room contains duplicate src/title
-    const room = await Room.findOne({ id: chatId }).populate({ path: 'feeds.channelId', model: 'rss_channel' })
-    if (!room) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
-    if (!isFeedsPopulated(room.feeds)) return Promise.reject('Populate failed')
+    const roomFeeds = await RoomFeeds.createQueryBuilder()
+    .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+    .innerJoin('roomFeed.feed', 'feed')
+    .getMany()
 
-    for (let i = 0; i < room.feeds.length; i++) {
-      const f = room.feeds[i];
-      if (f.channelId.title === channelTitle) {
+    if (!roomFeeds || !roomFeeds.length) return Promise.reject(new Error(`Room ${chatId} doesn't exist`))
+
+    roomFeeds.forEach(roomFeed => {
+      if (roomFeed.feed.title === channelTitle) {
         return replyMessage(event, 'Your room already has an rss feed with the same title')
       }
-      if (f.channelId.src === normalizedSrc) {
+      if (roomFeed.feed.source === normalizedSrc) {
         return replyMessage(event, 'Your room already has an rss feed with the same source')
       }
-    }
+    })
+
     try {
       // Add private source
-      const channel = await RssChannel.create({
-        src: normalizedSrc,
+      const newFeedData = Feed.create({
+        source: normalizedSrc,
         title: channelTitle,
-        items: feed.items,
+        lastItem: feed.items[0],
         frequency: Number(frequency),
         global: false,
-        roomIds: [room._id],
         lastUpdated: new Date(),
       })
+      const newFeed = await newFeedData.save()
       // Add source to room
-      room.feeds.push({
-        channelId: channel._id,
+      const newRoomFeed = RoomFeeds.create({
+        roomId: chatId,
+        feedId: newFeed.id,
         filters: [],
       })
-      await room.save()
+      await newRoomFeed.save()
       return replyMessage(event, [
         'Added',
         `rss feed src: ${src}`,
@@ -122,27 +131,27 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
       return replyMessage(event, 'Add source error')
     }
   } else {
-    const privateChannels = await RssChannel.findOne({
-      global: false,
-      $or: [
-        { src: normalizedSrc },
-        { title: channelTitle },
-      ],
-    })
-    if (privateChannels) {
+    const privateFeed = await Feed.createQueryBuilder()
+      .where('global = false')
+      .orWhere('source = :source', { source: normalizedSrc })
+      .orWhere('title = :title', { title: channelTitle })
+      .getOne()
+
+    if (privateFeed) {
       return replyMessage(event, 'Conflict with an existing private feed. Go use a migration script.')
     }
+
     // Add source to room
     try {
-      await RssChannel.create({
-        src: normalizedSrc,
+      const feedData = Feed.create({
+        source: normalizedSrc,
         title: channelTitle,
-        items: feed.items,
+        lastItem: feed.items[0],
         frequency: Number(frequency),
         global: true,
-        roomIds: [],
         lastUpdated: new Date(),
       })
+      await feedData.save()
       return replyMessage(event, [
         'Added Global Feed',
         `rss feed src: ${src}`,
