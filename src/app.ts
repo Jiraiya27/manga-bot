@@ -13,6 +13,9 @@ createConnection({
   type: 'postgres',
   url: DATABASE_URL,
   logging: DATABASE_LOGGING,
+  extra: {
+    ssl: true,
+  },
   synchronize: true,
   entities: [path.join(__dirname, '/entities/**/*.js')],
   migrations: [path.join(__dirname  + '/migrations/**/*.js')],
