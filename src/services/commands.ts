@@ -1,9 +1,9 @@
 import normalizeUrl from 'normalize-url'
 import _ from 'lodash'
 
-import { getChatRoom, replyMessage, isAdmin } from './lineSDK'
+import { getChatRoom, replyMessage, replyTemplateCarousel, isAdmin } from './lineSDK'
 import parse from './RSSParser'
-import { ReplyableEvent } from '@line/bot-sdk';
+import { ReplyableEvent, TemplateCarousel } from '@line/bot-sdk';
 import { Feed } from '../entities/Feed'
 import { Room } from '../entities/Room'
 import { RoomFeeds } from '../entities/RoomFeeds'
@@ -243,7 +243,10 @@ export const editSource = async (event: ReplyableEvent, title: string, property:
 
 // list global sources
 export const listSources = async (event: ReplyableEvent) => {
-  const feeds = await Feed.find({ where: { global: true } })
+  // const feeds = await Feed.find({ where: { global: true } })
+  const feeds = await Feed.createQueryBuilder('feed')
+    .innerJoinAndSelect('feed.roomFeeds', 'roomFeed')
+    .getMany()
   const messages = feeds.map((feed, i) => {
     return [
       `${i + 1}. ${feed.title}`,
@@ -251,8 +254,27 @@ export const listSources = async (event: ReplyableEvent) => {
       `Refresh - ${feed.frequency} mins`,
     ].join('\n')
   })
-  if (messages.length === 0) return replyMessage(event, 'There are no global feeds. Admin go do your job.')
-  return replyMessage(event, messages.join('\n'))
+  const altText = messages.length ? messages.join('\n') : 'There are no global feeds. Admin go do your job!'
+  // if (messages.length === 0) return replyMessage(event, 'There are no global feeds. Admin go do your job.')
+  // return replyMessage(event, messages.join('\n'))
+  const carousel: TemplateCarousel = {
+    type: 'carousel',
+    // columns: messages.map(m => ({ text: m, action: { type: 'postback', data: '', label: '' } })),
+    columns: feeds.map(feed => {
+      return {
+        text: 'lol',
+        actions: [{
+          // string literal in array.map bug https://github.com/Microsoft/TypeScript/issues/11152
+          // Need to explicitly cast as string literal again
+          type: 'postback' as 'postback',
+          label: 'lol', // Add/remove
+          data: 'lol',// add/remove
+        }]
+      }
+    })
+  }
+  return replyTemplateCarousel(event, altText, carousel)
+
 }
 
 // list feeds subscribed by room
