@@ -36,9 +36,6 @@ build/Release
 node_modules/
 jspm_packages/
 
-# TypeScript v1 declaration files
-typings/
-
 # Optional npm cache directory
 .npm
 
@@ -72,9 +69,5 @@ typings/
 # Serverless directories
 .serverless
 
-# Local test/note files
-test.js
-TODO
-
-#DB dumps
-db
+# Typescript output
+dist

@@ -1,21 +1,22 @@
-const {
+import { Request, Response } from "express";
+import { WebhookEvent } from "@line/bot-sdk";
+
+import {
   handleMessage,
   handleFollow,
   handleUnfollow,
   handleJoin,
   handleLeave,
-} = require('../services/lineEvents')
+} from './lineEventsController'
 
-const webhook = async (req, res) => {
+export const webhook = async (req: Request, res: Response) => {
   await Promise.all(req.body.events.map(handleEvent))
   return res.status(200).json({
     message: 'OK',
   })
 }
 
-const handleEvent = async event => {
-  console.debug('Event:', event)
-
+const handleEvent = async (event: WebhookEvent) => {
   switch (event.type) {
     case 'message':
       return handleMessage(event)
@@ -27,11 +28,7 @@ const handleEvent = async event => {
       return handleJoin(event)
     case 'leave':
       return handleLeave(event)
-    default:
+    default: // postback and beacon
       return Promise.resolve()
   }
-}
-
-module.exports = {
-  webhook,
 }

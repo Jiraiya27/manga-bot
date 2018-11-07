@@ -7,8 +7,9 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "start": "node index.js",
-    "lint": "eslint"
+    "start": "tsc && node dist/index.js",
+    "lint": "eslint",
+    "tslint": "tslint -c tslint.json src/**/*.ts"
   },
   "dependencies": {
     "@line/bot-sdk": "^6.1.0",
@@ -17,15 +18,25 @@
     "express": "^4.16.3",
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
-    "mongoose": "^5.2.6",
     "morgan": "^1.9.0",
     "node-cron": "^1.2.1",
     "normalize-url": "^3.3.0",
-    "rss-parser": "^3.4.3"
+    "pg": "^7.4.3",
+    "reflect-metadata": "^0.1.12",
+    "rss-parser": "^3.4.3",
+    "typeorm": "^0.2.7"
   },
   "devDependencies": {
+    "@types/dotenv": "^4.0.3",
+    "@types/express": "^4.16.0",
+    "@types/lodash": "^4.14.116",
+    "@types/morgan": "^1.7.35",
+    "@types/node-cron": "^1.2.0",
+    "@types/normalize-url": "^1.9.1",
+    "@types/pg": "^7.4.10",
     "eslint": "^5.4.0",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.14.0"
+    "eslint-plugin-import": "^2.14.0",
+    "tslint": "^5.11.0"
   }
 }

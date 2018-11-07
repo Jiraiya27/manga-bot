@@ -1,8 +1,8 @@
-const Parser = require('rss-parser');
+import Parser from 'rss-parser'
 
 const parser = new Parser()
 
-async function parse(url) {
+export default async function parse(url: string) {
   try {
     const feed = await parser.parseURL(url)
     return feed
@@ -10,8 +10,4 @@ async function parse(url) {
     console.error('RSSParser.parse:', url, error)
     return Promise.reject(new Error(`Failed to parse url: ${url}`))
   }
-}
-
-module.exports = {
-  parse,
 }
