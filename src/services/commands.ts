@@ -311,12 +311,14 @@ export const removeSourceFromRoom = async (event: ReplyableEvent, title: string)
   const { chatId } = getChatRoom(event)
   title = title.toLocaleLowerCase().trim()
 
-  // returns DeleteResult { raw: [] }
-  await RoomFeeds.createQueryBuilder('roomFeed')
+  // eturns DeleteResult { raw: [] }
+  const res = await RoomFeeds.createQueryBuilder('roomFeed')
   .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
   .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
   .delete()
   .execute()
+
+  console.log({ res })
 
   return replyMessage(event, `Deleted ${title} from this room`)
 }
