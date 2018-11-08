@@ -246,6 +246,7 @@ export const listSources = async (event: ReplyableEvent) => {
   const { chatId } = getChatRoom(event);
   const feeds = await Feed.createQueryBuilder('feed')
     .leftJoinAndSelect('feed.roomFeeds', 'roomFeed', 'roomFeed.roomId = :chatId', { chatId })
+    .where('global = true')
     .getMany()
   if (!feeds.length) return replyMessage(event, 'There are no global feeds. Admin go do your job.')
 
@@ -259,7 +260,7 @@ export const listSources = async (event: ReplyableEvent) => {
     altTexts.push(text)
 
     const label = feed.roomFeeds.length ? 'Remove' : 'Add';
-    const data = feed.roomFeeds.length ? `/add ${feed.title}` : `/remove-source ${feed.title}`
+    const data = feed.roomFeeds.length ? `/remove-source ${feed.title}` : `/add ${feed.title}`;
     return {
       text,
       actions: [
