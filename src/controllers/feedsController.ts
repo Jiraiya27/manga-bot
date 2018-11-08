@@ -36,6 +36,8 @@ export const refresh = async (req: Request, res: Response) => {
       // Cache rss response, probably won't work since requests are parallel?
       cache[feed.source] = rss
 
+      console.log('roomFeeds', feed.roomFeeds)
+
       // Update subscribed rooms
       await Promise.all(feed.roomFeeds.map(async roomFeed => {
         // Apply filters to title
@@ -55,6 +57,7 @@ export const refresh = async (req: Request, res: Response) => {
       // Update channel time and items
       feed.lastItem = rss.items[0]
       feed.lastUpdated = new Date()
+      console.log('feed', feed)
       await feed.save()
     }))
 
