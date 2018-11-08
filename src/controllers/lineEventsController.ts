@@ -1,4 +1,4 @@
-import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent } from '@line/bot-sdk'
+import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent, PostbackEvent } from '@line/bot-sdk'
 
 import { Room } from '../entities/Room'
 import { getChatRoom } from '../services/lineSDK'
@@ -122,4 +122,19 @@ export const handleLeave = async (event: LeaveEvent) => {
     id: chatId,
   })
   console.log('Left room:', room)
+}
+
+export const handlePostback = async (event: PostbackEvent) => {
+  const messageEvent: MessageEvent = {
+    type: "message",
+    timestamp: event.timestamp,
+    source: event.source,
+    replyToken: event.replyToken,
+    message: {
+      id: 'id',
+      type: 'text',
+      text: event.postback.data,
+    },
+  }
+  return handleMessage(messageEvent)
 }

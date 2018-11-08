@@ -258,8 +258,8 @@ export const listSources = async (event: ReplyableEvent) => {
     ].join('\n')
     altTexts.push(text)
 
-    const label = feed.roomFeeds ? 'Remove' : 'Add';
-    const data = feed.roomFeeds ? `/add ${feed.title}` : `/remove-source ${feed.title}`
+    const label = feed.roomFeeds.length ? 'Remove' : 'Add';
+    const data = feed.roomFeeds.length ? `/add ${feed.title}` : `/remove-source ${feed.title}`
     return {
       text,
       actions: [

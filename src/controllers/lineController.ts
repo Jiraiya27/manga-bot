@@ -7,6 +7,7 @@ import {
   handleUnfollow,
   handleJoin,
   handleLeave,
+  handlePostback,
 } from './lineEventsController'
 
 export const webhook = async (req: Request, res: Response) => {
@@ -28,7 +29,10 @@ const handleEvent = async (event: WebhookEvent) => {
       return handleJoin(event)
     case 'leave':
       return handleLeave(event)
-    default: // postback and beacon
+    case 'postback':
+      return handlePostback(event)
+    case 'beacon':
+    default:
       return Promise.resolve()
   }
 }
