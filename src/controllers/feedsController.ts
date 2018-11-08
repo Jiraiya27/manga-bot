@@ -56,7 +56,7 @@ export const refresh = async (req: Request, res: Response) => {
       // Update channel time and items
       feed.lastItem = rss.items[0]
       feed.lastUpdated = new Date()
-      delete feed.roomFeeds
+      delete feed.roomFeeds // Need to delete otherwise it gets updated twice and causes error
       await feed.save()
     }))
 
