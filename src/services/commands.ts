@@ -311,15 +311,14 @@ export const removeSourceFromRoom = async (event: ReplyableEvent, title: string)
   const { chatId } = getChatRoom(event)
   title = title.toLocaleLowerCase().trim()
 
-  // eturns DeleteResult { raw: [] }
-  const res = await RoomFeeds.createQueryBuilder('roomFeed')
+  const roomFeed = await await RoomFeeds.createQueryBuilder('roomFeed')
   .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
   .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
-  .delete()
-  .execute()
+  .getOne()
+  
+  if (!roomFeed) return replyMessage(event, `${title} doesn't exist in this room`)
 
-  console.log({ res })
-
+  await roomFeed.remove()
   return replyMessage(event, `Deleted ${title} from this room`)
 }
 
