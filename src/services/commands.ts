@@ -3,7 +3,7 @@ import _ from 'lodash'
 
 import { getChatRoom, replyMessage, replyTemplateCarousel, isAdmin } from './lineSDK'
 import parse from './RSSParser'
-import { ReplyableEvent, TemplateCarousel } from '@line/bot-sdk';
+import { ReplyableEvent, TemplateColumn } from '@line/bot-sdk';
 import { Feed } from '../entities/Feed'
 import { Room } from '../entities/Room'
 import { RoomFeeds } from '../entities/RoomFeeds'
@@ -243,37 +243,40 @@ export const editSource = async (event: ReplyableEvent, title: string, property:
 
 // list global sources
 export const listSources = async (event: ReplyableEvent) => {
-  // const feeds = await Feed.find({ where: { global: true } })
+  const { chatId } = getChatRoom(event);
   const feeds = await Feed.createQueryBuilder('feed')
-    .innerJoinAndSelect('feed.roomFeeds', 'roomFeed')
+    .leftJoinAndSelect('feed.roomFeeds', 'roomFeed', 'roomFeed.roomId = :chatId', { chatId })
     .getMany()
-  const messages = feeds.map((feed, i) => {
-    return [
+  if (!feeds.length) return replyMessage(event, 'There are no global feeds. Admin go do your job.')
+
+  let altTexts: string[] = [];
+  const columns: TemplateColumn[] = feeds.map((feed, i) => {
+    const text = [
       `${i + 1}. ${feed.title}`,
       `Src - ${feed.source}`,
       `Refresh - ${feed.frequency} mins`,
     ].join('\n')
-  })
-  const altText = messages.length ? messages.join('\n') : 'There are no global feeds. Admin go do your job!'
-  // if (messages.length === 0) return replyMessage(event, 'There are no global feeds. Admin go do your job.')
-  // return replyMessage(event, messages.join('\n'))
-  const carousel: TemplateCarousel = {
-    type: 'carousel',
-    // columns: messages.map(m => ({ text: m, action: { type: 'postback', data: '', label: '' } })),
-    columns: feeds.map(feed => {
-      return {
-        text: 'lol',
-        actions: [{
+    altTexts.push(text)
+
+    const label = feed.roomFeeds ? 'Remove' : 'Add';
+    const data = feed.roomFeeds ? `/add ${feed.title}` : `/remove-source ${feed.title}`
+    return {
+      text,
+      actions: [
+        {
           // string literal in array.map bug https://github.com/Microsoft/TypeScript/issues/11152
           // Need to explicitly cast as string literal again
           type: 'postback' as 'postback',
-          label: 'lol', // Add/remove
-          data: 'lol',// add/remove
-        }]
-      }
-    })
-  }
-  return replyTemplateCarousel(event, altText, carousel)
+          label,
+          data,
+        }
+      ]
+    }
+  })
+
+  const altText = altTexts.join('\n')
+
+  return replyTemplateCarousel(event, altText, columns)
 
 }
 

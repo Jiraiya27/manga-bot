@@ -1,4 +1,4 @@
-import { Client, ClientConfig, MessageEvent, EventBase, Profile, ReplyableEvent, TextMessage, TemplateCarousel, TemplateMessage } from '@line/bot-sdk'
+import { Client, ClientConfig, MessageEvent, EventBase, Profile, ReplyableEvent, TextMessage, TemplateCarousel, TemplateMessage, TemplateColumn } from '@line/bot-sdk'
 import { LINE_CONFIG, ADMIN_ID } from '../config'
 
 export const client = new Client(LINE_CONFIG as ClientConfig)
@@ -85,8 +85,8 @@ export const replyMessage = async (event: ReplyableEvent, message: string | stri
   }
 }
 
-export const replyTemplateCarousel = async (event: ReplyableEvent, altText: string, carousel: Omit<TemplateCarousel, 'type'>) => {
-  const templateCarousel: TemplateCarousel = { type: 'carousel', ...carousel }
+export const replyTemplateCarousel = async (event: ReplyableEvent, altText: string, columns: TemplateColumn[]) => {
+  const templateCarousel: TemplateCarousel = { type: 'carousel', columns }
   const templateMessage: TemplateMessage = { type: 'template', altText, template: templateCarousel }
   return client.replyMessage(event.replyToken, templateMessage);
 }
