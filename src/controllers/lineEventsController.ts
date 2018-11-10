@@ -143,6 +143,8 @@ export const handlePostback = async (event: PostbackEvent) => {
 
   const text = event.postback.data
 
+  console.log({ text })
+
   // Postbacks that can be processed right away
   if (listGlobalsRegex.test(text)) {
     return listSources(event)
