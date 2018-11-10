@@ -10,7 +10,7 @@ export class Room extends BaseEntity{
   @Column({ type: 'text' })
   type: 'user' | 'group' | 'room'
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   lastPostback: string
 
   @OneToMany(type => RoomFeeds, roomFeeds => roomFeeds.room)
