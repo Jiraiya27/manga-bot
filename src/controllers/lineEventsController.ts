@@ -1,7 +1,7 @@
 import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent, PostbackEvent } from '@line/bot-sdk'
 
 import { Room } from '../entities/Room'
-import { getChatRoom } from '../services/lineSDK'
+import { getChatRoom, replyMessage } from '../services/lineSDK'
 import {
   addFilter,
   addSource,
@@ -19,6 +19,11 @@ export const handleMessage = async (event: MessageEvent) => {
     console.debug('Received unhandled message type:', event.message.type)
     return Promise.resolve()
   }
+
+  // Handle postback if room previously has one
+  // otherwise continue as normal
+  const postbackResponse = await handlePostbackResponse(event)
+  if (postbackResponse !== false) return;
 
   const addFilterRegex = /^\/add-filter\s+(\S+)(\s*filters="(.+)")?/
   const addSourceRegex = /^\/add-source\s+(\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
@@ -124,7 +129,10 @@ export const handleLeave = async (event: LeaveEvent) => {
   console.log('Left room:', room)
 }
 
+// Forwards postback data to get handled like a normal message
+// Saves data for next incomming message to continue the process
 export const handlePostback = async (event: PostbackEvent) => {
+  const { chatId } = getChatRoom(event)
   const messageEvent: MessageEvent = {
     type: "message",
     timestamp: event.timestamp,
@@ -136,5 +144,35 @@ export const handlePostback = async (event: PostbackEvent) => {
       text: event.postback.data,
     },
   }
-  return handleMessage(messageEvent)
+  await handleMessage(messageEvent)
+  await Room.update({ id: chatId }, { lastPostback: event.postback.data })
+}
+
+/**
+ * Check if message was sent after a postback event.
+ * Continues handling the post if can
+ * Else removes postback and back to handling it as a normal message
+ */
+async function handlePostbackResponse (event: MessageEvent) {
+  const { chatId } = getChatRoom(event)
+
+  const room = await Room.findOne({ id: chatId })
+  if (!room || !room.lastPostback) return Promise.resolve(false)
+
+  const addFilterPostbackRegex = /^\/add-filter\s+(\S+)/
+
+  if (addFilterPostbackRegex.test(room.lastPostback)) {
+    const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(room.lastPostback)
+
+    if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
+
+    await addFilter(event, title, [event.message.text])
+    room.lastPostback = ''
+    return room.save()
+  }
+
+  // Other case returns false and deletes postback
+  room.lastPostback = ''
+  await room.save()
+  return Promise.resolve(false)
 }

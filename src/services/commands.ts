@@ -359,7 +359,7 @@ export const addFilter = async (event: ReplyableEvent, title: string, filters: s
 
   console.log({ roomFeed })
   
-  if (!roomFeed) return replyMessage(event, 'Feed not found in this room')
+  if (!roomFeed) return replyMessage(event, `Feed ${title} not found in this room`)
 
   const prevFilters = roomFeed.filters
 
