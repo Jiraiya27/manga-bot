@@ -14,6 +14,17 @@ import {
   removeSourceFromRoom,
 } from '../services/commands'
 
+const addFilterRegex = /^\/add-filter\s+(\S+)(\s*filters="(.+)")?/
+const addFilterPostbackRegex = /^\/add-filter\s+(\S+)/
+const addSourceRegex = /^\/add-source\s+(\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
+const addToRoomRegex = /^\/add\s+(\S+)(\s*--filters="(.+)")?/
+const editSourceRegex = /^\/edit\s+(\S+)(\s+\S+)?(\s+\S+)?/
+const helpRegex = /^\/help/
+const listGlobalsRegex = /^\/list-global/
+const listRoomFeedsRegex = /^\/list/
+const removeFilterRegex = /^\/remove-filter\s+(\S+)(\s*filters="(.+)")?/
+const removeSourceFromRoomRegex = /^\/remove-source\s+(\S+)/
+
 export const handleMessage = async (event: MessageEvent) => {
   if (event.message.type !== 'text') {
     console.debug('Received unhandled message type:', event.message.type)
@@ -25,20 +36,13 @@ export const handleMessage = async (event: MessageEvent) => {
   const postbackResponse = await handlePostbackResponse(event)
   if (postbackResponse !== false) return;
 
-  const addFilterRegex = /^\/add-filter\s+(\S+)(\s*filters="(.+)")?/
-  const addSourceRegex = /^\/add-source\s+(\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
-  const addToRoomRegex = /^\/add\s+(\S+)(\s*--filters="(.+)")?/
-  const editSourceRegex = /^\/edit\s+(\S+)(\s+\S+)?(\s+\S+)?/
-  const helpRegex = /^\/help/
-  const listGlobalsRegex = /^\/list-global/
-  const listRoomFeedsRegex = /^\/list/
-  const removeFilterRegex = /^\/remove-filter\s+(\S+)(\s*filters="(.+)")?/
-  const removeSourceFromRoomRegex = /^\/remove-source\s+(\S+)/
-
   const { text } = event.message
 
   console.log({ text })
 
+  /**
+   * Help
+   */
   if (helpRegex.test(text)) {
     return help(event)
   }
@@ -133,23 +137,29 @@ export const handleLeave = async (event: LeaveEvent) => {
 // Saves data for next incomming message to continue the process
 export const handlePostback = async (event: PostbackEvent) => {
   const { chatId } = getChatRoom(event)
-  const messageEvent: MessageEvent = {
-    type: "message",
-    timestamp: event.timestamp,
-    source: event.source,
-    replyToken: event.replyToken,
-    message: {
-      id: 'id',
-      type: 'text',
-      text: event.postback.data,
-    },
+
+  const text = event.postback.data
+
+  // Postbacks that can be processed right away
+  if (listGlobalsRegex.test(text)) {
+    return listSources(event)
   }
-  await handleMessage(messageEvent)
+
+  if (listRoomFeedsRegex.test(text)) {
+    return listRoomFeeds(event)
+  }
+
+  // Postbacks that require more data
+  if (addFilterPostbackRegex.test(text)) {
+    const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(text)
+    await replyMessage(event, `Enter the filter to be applied for ${title}`)
+  }
+
   await Room.update({ id: chatId }, { lastPostback: event.postback.data })
 }
 
 /**
- * Check if message was sent after a postback event.
+ * Check if message was sent after/during a postback event.
  * Continues handling the post if can
  * Else removes postback and back to handling it as a normal message
  */
@@ -158,8 +168,6 @@ async function handlePostbackResponse (event: MessageEvent) {
 
   const room = await Room.findOne({ id: chatId })
   if (!room || !room.lastPostback) return Promise.resolve(false)
-
-  const addFilterPostbackRegex = /^\/add-filter\s+(\S+)/
 
   if (addFilterPostbackRegex.test(room.lastPostback)) {
     const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(room.lastPostback)
