@@ -278,7 +278,6 @@ export const listSources = async (event: ReplyableEvent) => {
   const altText = altTexts.join('\n')
 
   return replyTemplateCarousel(event, altText, columns)
-
 }
 
 // list feeds subscribed by room
@@ -288,23 +287,48 @@ export const listRoomFeeds = async (event: ReplyableEvent) => {
     .innerJoinAndSelect('feed.roomFeeds', 'roomFeed', 'roomFeed.roomId = :chatId', { chatId })
     .getMany()
 
-  const messages = feeds.map((feed, i) => {
-    const message = [
+  if (!feeds.length) return replyMessage(event, 
+    'This room s not subscribed to any feed. '
+    + 'Click list all to subscribe to existing feed or '
+    + 'click Add to include your own feed')
+
+  const altTexts: string[] = []
+  const columns: TemplateColumn[] = feeds.map((feed, i) => {
+    const text = [
       `${i + 1}. ${feed.title}`,
       `Src - ${feed.source}`,
       `Refresh - ${feed.frequency} mins`,
     ]
-    if (feed.roomFeeds[0].filters.length > 0) message.push(`Filters - ${feed.roomFeeds[0].filters}`)
-    return message.join('\n')
+    if (feed.roomFeeds[0].filters.length) {
+      text.push(`Filters - ${feed.roomFeeds[0].filters}`)
+    }
+    altTexts.push(text.join('\n'))
+
+    return {
+      text: text.join('\n'),
+      actions: [
+        {
+          type: 'postback' as 'postback',
+          label: 'Remove',
+          data: `/remove-source ${feed.title}`,
+        },
+        {
+          type: 'postback' as 'postback',
+          label: 'Add filter',
+          data: `/add-filter ${feed.title}`,
+        },
+        {
+          type: 'postback' as 'postback',
+          label: 'Remove filter',
+          data: `/remove-filter ${feed.title}`,
+        },
+      ]
+    }
   })
-  if (messages.length === 0) {
-    return replyMessage(
-      event,
-      'This room is not subscribed to any feed.'
-      + ' Quick add from the global feed to get started.',
-    )
-  }
-  return replyMessage(event, messages.join('\n'))
+
+  const altText = altTexts.join('\n')
+
+  return replyTemplateCarousel(event, altText, columns)
 }
 
 export const removeSourceFromRoom = async (event: ReplyableEvent, title: string) => {
