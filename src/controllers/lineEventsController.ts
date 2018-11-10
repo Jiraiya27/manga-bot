@@ -1,7 +1,8 @@
-import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent, PostbackEvent } from '@line/bot-sdk'
+import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent, PostbackEvent, TemplateColumn } from '@line/bot-sdk'
 
 import { Room } from '../entities/Room'
-import { getChatRoom, replyMessage } from '../services/lineSDK'
+import { RoomFeeds } from '../entities/RoomFeeds'
+import { getChatRoom, replyMessage, replyTemplateCarousel } from '../services/lineSDK'
 import {
   addFilter,
   addSource,
@@ -23,6 +24,8 @@ const helpRegex = /^\/help/
 const listGlobalsRegex = /^\/list-global/
 const listRoomFeedsRegex = /^\/list/
 const removeFilterRegex = /^\/remove-filter\s+(\S+)(\s*filters="(.+)")?/
+const removeFilterPostbackRegex = /^\/remove-filter\s+(\S+)/
+const removeFilterSelectedPostbackRegex = /^\/remove-filter\s+(\S+)(\s*filters="(.+)")/
 const removeSourceFromRoomRegex = /^\/remove-source\s+(\S+)/
 
 export const handleMessage = async (event: MessageEvent) => {
@@ -149,10 +152,45 @@ export const handlePostback = async (event: PostbackEvent) => {
     return listRoomFeeds(event)
   }
 
-  // Postbacks that require more data
+  // Postbacks that require more actions
   if (addFilterPostbackRegex.test(text)) {
     const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(text)
     await replyMessage(event, `Enter the filter to be applied for ${title}`)
+  }
+
+  if (removeFilterSelectedPostbackRegex.test(text)) {
+    const [, title,, filters] = <RegExpExecArray>removeFilterSelectedPostbackRegex.exec(text)
+    return removeFilter(event, title, [filters])
+  }
+
+  if (removeFilterPostbackRegex.test(text)) {
+    const [, title] = <RegExpExecArray>removeFilterPostbackRegex.exec(text)
+
+    const roomFeed = await RoomFeeds.createQueryBuilder('roomFeed')
+    .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+    .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
+    .getOne()
+
+    if (!roomFeed || !roomFeed.filters.length) return replyMessage(event, 'No filter to remove')
+
+    const altTexts: string[] = [`${roomFeed.feed.title} filters - `];
+    const columns: TemplateColumn[] = roomFeed.filters.map(filter => {
+      altTexts.push(filter)
+      return {
+        text: filter,
+        actions: [
+          {
+            type: 'postback' as 'postback',
+            label: 'Remove',
+            data: `/remove-filter ${roomFeed.feed.title} filters="${filter}"`
+          }
+        ],
+      }
+    });
+
+    const altText = altTexts.join('\n')
+
+    return replyTemplateCarousel(event, altText, columns)
   }
 
   await Room.update({ id: chatId }, { lastPostback: event.postback.data })

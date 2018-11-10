@@ -335,7 +335,7 @@ export const removeSourceFromRoom = async (event: ReplyableEvent, title: string)
   const { chatId } = getChatRoom(event)
   title = title.toLocaleLowerCase().trim()
 
-  const roomFeed = await await RoomFeeds.createQueryBuilder('roomFeed')
+  const roomFeed = await RoomFeeds.createQueryBuilder('roomFeed')
   .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
   .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
   .getOne()
