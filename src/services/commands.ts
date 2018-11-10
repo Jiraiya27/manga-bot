@@ -296,7 +296,7 @@ export const listRoomFeeds = async (event: ReplyableEvent) => {
   const columns: TemplateColumn[] = feeds.map((feed, i) => {
     const text = [
       `${i + 1}. ${feed.title}`,
-      `Src - ${feed.source}`,
+      // `Src - ${feed.source}`, // Comment out because exceed char limit (120)
       `Refresh - ${feed.frequency} mins`,
     ]
     if (feed.roomFeeds[0].filters.length) {
