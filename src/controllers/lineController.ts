@@ -11,10 +11,15 @@ import {
 } from './lineEventsController'
 
 export const webhook = async (req: Request, res: Response) => {
-  await Promise.all(req.body.events.map(handleEvent))
-  return res.status(200).json({
-    message: 'OK',
-  })
+  try {
+    await Promise.all(req.body.events.map(handleEvent))
+    return res.status(200).json({
+      message: 'OK',
+    })
+  } catch (error) {
+    console.log('Webhook Error', error)
+    return res.status(500)
+}
 }
 
 const handleEvent = async (event: WebhookEvent) => {

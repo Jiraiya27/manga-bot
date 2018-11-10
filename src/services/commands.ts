@@ -357,8 +357,6 @@ export const addFilter = async (event: ReplyableEvent, title: string, filters: s
     .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
     .getOne()
 
-  console.log({ roomFeed })
-  
   if (!roomFeed) return replyMessage(event, `Feed ${title} not found in this room`)
 
   const prevFilters = roomFeed.filters
