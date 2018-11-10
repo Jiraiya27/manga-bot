@@ -15,7 +15,6 @@ export const refresh = async (req: Request, res: Response) => {
     const cache: { [key: string]: RssFeed } = {}
 
     await Promise.all(feeds.map(async (feed, index) => {
-      if (index !== 0) return;
       const rss = cache[feed.source] || await parseRss(feed.source)
       const lastUpdatedMoment = moment(feed.lastUpdated)
 
