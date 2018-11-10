@@ -17,9 +17,14 @@ export const webhook = async (req: Request, res: Response) => {
       message: 'OK',
     })
   } catch (error) {
-    console.log('Webhook Error', error)
-    return res.status(500)
-}
+    // Error from @lineSDK
+    if (error.originalError) {
+      console.error(error.originalError.response)
+    } else {
+      console.error(error)
+    }
+    return res.status(500).send('Error')
+  }
 }
 
 const handleEvent = async (event: WebhookEvent) => {
