@@ -365,7 +365,7 @@ export const addFilter = async (event: ReplyableEvent, title: string, filters: s
 
   await roomFeed.save()
 
-  return replyMessage(event, `Update filter for ${title} from "${prevFilters.join(', ')}" to "${roomFeed.filters.join(', ')}"`)
+  return replyMessage(event, `Updated filter for ${title} from "${prevFilters.join(', ')}" to "${roomFeed.filters.join(', ')}"`)
 }
 
 export const removeFilter = async (event: ReplyableEvent, title: string, filters: string[]) => {

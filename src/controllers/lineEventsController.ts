@@ -154,6 +154,18 @@ export const handlePostback = async (event: PostbackEvent) => {
     return listRoomFeeds(event)
   }
 
+  if (addToRoomRegex.test(text)) {
+    const [, title,, filters] = <RegExpExecArray>addToRoomRegex.exec(text)
+    // escape commas and split args
+    const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
+    return addSourceToRoom(event, title, filtersArray)
+  }
+  
+  if (removeSourceFromRoomRegex.test(text)) {
+    const [, title] = <RegExpExecArray>removeSourceFromRoomRegex.exec(text)
+    return removeSourceFromRoom(event, title)
+  }
+
   // Postbacks that require more actions
   if (addFilterPostbackRegex.test(text)) {
     const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(text)
