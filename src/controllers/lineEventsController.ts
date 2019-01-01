@@ -62,6 +62,10 @@ export const handleMessage = async (event: MessageEvent) => {
     return addSource(event, { src, title, frequency: Number(frequency), global: !!globalFlag })
   }
 
+  if (addSourcePostbackRegex.test(text)) {
+    return replyMessage(event, "Enter the rss feed's url")
+  }
+
   if (addToRoomRegex.test(text)) {
     const [, title,, filters] = <RegExpExecArray>addToRoomRegex.exec(text)
     // escape commas and split args
@@ -211,10 +215,6 @@ export const handlePostback = async (event: PostbackEvent) => {
     return replyTemplateCarousel(event, altText, columns)
   }
 
-  if (addSourcePostbackRegex.test(text)) {
-    await replyMessage(event, "Enter the rss feed's url")
-  }
-
   await Room.update({ id: chatId }, { lastPostback: event.postback.data })
 }
 
@@ -229,6 +229,7 @@ async function handlePostbackResponse (event: MessageEvent) {
   const room = await Room.findOne({ id: chatId })
   if (!room || !room.lastPostback) return Promise.resolve(false)
 
+  // Add Filter
   if (addFilterPostbackRegex.test(room.lastPostback)) {
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
 
@@ -239,6 +240,7 @@ async function handlePostbackResponse (event: MessageEvent) {
     return room.save()
   }
 
+  // Remove Filter
   if (removeFilterPostbackRegex.test(room.lastPostback)) {
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
 
@@ -249,6 +251,7 @@ async function handlePostbackResponse (event: MessageEvent) {
     return room.save()
   }
 
+  // Add Source
   if (addSourcePostbackRegexTitle.test(room.lastPostback)) {
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a title`)
 
