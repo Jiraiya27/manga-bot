@@ -231,6 +231,16 @@ async function handlePostbackResponse (event: MessageEvent) {
     return room.save()
   }
 
+  if (removeFilterPostbackRegex.test(room.lastPostback)) {
+    const [, title] = <RegExpExecArray>removeFilterPostbackRegex.exec(room.lastPostback)
+
+    if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
+
+    await removeFilter(event, title, [event.message.text])
+    room.lastPostback = ''
+    return room.save()
+  }
+
   // Other case returns false and deletes postback
   room.lastPostback = ''
   await room.save()
