@@ -14,8 +14,8 @@ const urlRegex = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()
 type AddSourceOptions = {
   src: string;
   title: string;
-  frequency: number;
-  global: boolean;
+  frequency?: number;
+  global?: boolean;
 };
 
 // Returns a list of all commands
@@ -71,16 +71,15 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
   // Can't duplicate with global source
   const globalFeeds = await Feed.createQueryBuilder()
     .where('global = true')
-    .orWhere('source = :source', { source: normalizedSrc })
-    .orWhere('title = :title', { title: channelTitle })
     .getMany();
 
   if (globalFeeds.length) {
     // either repeat of global source/title exists
     if (globalFeeds.find(f => f.source === normalizedSrc)) {
       return replyMessage(event, 'Global channel with same source exists');
+    } else if (globalFeeds.find(f => f.title === title)) {
+      return replyMessage(event, 'Global channel with same title exists');
     }
-    return replyMessage(event, 'Global channel with same title exists');
   }
 
   if (global && !isAdmin(event)) {
