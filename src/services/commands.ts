@@ -46,12 +46,12 @@ export const help = async (event: ReplyableEvent) => {
 };
 
 export const validateRssSource = (url: string) => {
-  if (!urlRegex.test(url)) throw new Error(`Source '${url}' isn't a url`)
+  if (!urlRegex.test(url)) throw new Error(`Source '${url}' isn't a url`);
   const normalizedUrl = normalizeUrl(url);
   return parse(normalizedUrl).catch(error => {
-    console.error(error)
-    throw new Error(`Could not parse ${url}`)
-  })
+    console.error(error);
+    throw new Error(`Could not parse ${url}`);
+  });
 };
 
 // Adds rss feed to db
@@ -60,7 +60,7 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
   const feed: RssFeed = await validateRssSource(src).catch(error => {
     return replyMessage(event, error.message);
   });
-  const normalizedSrc = normalizeUrl(src)
+  const normalizedSrc = normalizeUrl(src);
 
   if (Number.isNaN(Number(frequency))) {
     return replyMessage(event, `Frequency ${frequency} isn't a number`);
@@ -77,7 +77,8 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
     // either repeat of global source/title exists
     if (globalFeeds.find(f => f.source === normalizedSrc)) {
       return replyMessage(event, 'Global channel with same source exists');
-    } else if (globalFeeds.find(f => f.title === title)) {
+    }
+    if (globalFeeds.find(f => f.title === title)) {
       return replyMessage(event, 'Global channel with same title exists');
     }
   }
@@ -91,8 +92,8 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
   if (!global) {
     // Reject if room contains duplicate src/title
     const roomFeeds = await RoomFeeds.createQueryBuilder('roomFeed')
-      .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
-      .innerJoin('roomFeed.feed', 'feed')
+      .innerJoinAndMapOne('roomFeed.room', 'roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+      .innerJoinAndMapOne('roomFeed.feed', 'roomFeed.feed', 'feed')
       .getMany();
 
     if (!roomFeeds || !roomFeeds.length) return Promise.reject(new Error(`Room ${chatId} doesn't exist`));
