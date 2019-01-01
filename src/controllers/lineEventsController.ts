@@ -181,13 +181,13 @@ export const handlePostback = async (event: PostbackEvent) => {
     const [, title] = <RegExpExecArray>removeFilterPostbackRegex.exec(text)
 
     const roomFeed = await RoomFeeds.createQueryBuilder('roomFeed')
-    .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
-    .innerJoin('roomFeed.feed', 'feed', 'feed.title = :title', { title })
+    .innerJoinAndMapOne('roomFeed.room', 'roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+    .innerJoinAndMapOne('roomFeed.feed', 'roomFeed.feed', 'feed', 'feed.title = :title', { title })
     .getOne()
 
     if (!roomFeed || !roomFeed.filters.length) return replyMessage(event, 'No filter to remove')
 
-    const altTexts: string[] = [`${roomFeed.feed.title} filters - `];
+    const altTexts = [`${roomFeed.feed.title} filters - `];
     const columns: TemplateColumn[] = roomFeed.filters.map(filter => {
       altTexts.push(filter)
       return {
