@@ -288,9 +288,9 @@ export const listRoomFeeds = async (event: ReplyableEvent) => {
     .getMany()
 
   if (!feeds.length) return replyMessage(event, 
-    'This room s not subscribed to any feed. '
-    + 'Click list all to subscribe to existing feed or '
-    + 'click Add to include your own feed')
+    'This room is not subscribed to any feed. '
+    + 'Select \'List All\' to subscribe to an existing feed or '
+    + 'Select \'Add\' to include your own feed')
 
   const altTexts: string[] = []
   const columns: TemplateColumn[] = feeds.map((feed, i) => {
