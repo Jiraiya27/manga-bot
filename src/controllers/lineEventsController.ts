@@ -20,8 +20,8 @@ const addFilterRegex = /^\/add-filter\s+(\S+)(\s*filters="(.+)")?/
 const addFilterPostbackRegex = /^\/add-filter\s+(\S+)/
 const addSourceRegex = /^\/add-source\s+(\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
 const addSourcePostbackRegex = /^\/add-source/
-const addSourcePostbackRegexSource = /^\/add-source\s+(\S+)/
-const addSourcePostbackRegexTitle = /^\/add-source\s+(\S+)(\s+\S+)/
+const addSourcePostbackRegexSource = /^\/add-source/
+const addSourcePostbackRegexTitle = /^\/add-source\s+(\S+)/
 const addToRoomRegex = /^\/add\s+(\S+)(\s*--filters="(.+)")?/
 const editSourceRegex = /^\/edit\s+(\S+)(\s+\S+)?(\s+\S+)?/
 const helpRegex = /^\/help/
