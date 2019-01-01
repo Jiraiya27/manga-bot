@@ -63,6 +63,9 @@ export const handleMessage = async (event: MessageEvent) => {
   }
 
   if (addSourcePostbackRegex.test(text)) {
+    const { chatId } = getChatRoom(event)
+    await Room.update({ id: chatId }, { lastPostback: '/add-source' })
+
     return replyMessage(event, "Enter the rss feed's url")
   }
 
