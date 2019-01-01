@@ -90,7 +90,7 @@ export const addSource = async (event: ReplyableEvent, { src, title, frequency =
 
   if (!global) {
     // Reject if room contains duplicate src/title
-    const roomFeeds = await RoomFeeds.createQueryBuilder()
+    const roomFeeds = await RoomFeeds.createQueryBuilder('roomFeed')
       .innerJoin('roomFeed.room', 'room', 'room.id = :id', { id: chatId })
       .innerJoin('roomFeed.feed', 'feed')
       .getMany();
