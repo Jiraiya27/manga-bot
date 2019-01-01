@@ -13,11 +13,15 @@ import {
   listSources,
   removeFilter,
   removeSourceFromRoom,
+  validateRssSource,
 } from '../services/commands'
 
 const addFilterRegex = /^\/add-filter\s+(\S+)(\s*filters="(.+)")?/
 const addFilterPostbackRegex = /^\/add-filter\s+(\S+)/
 const addSourceRegex = /^\/add-source\s+(\S+)(\s+\S+)?(\s+(?!--)\S+)?(\s+--global)?/
+const addSourcePostbackRegex = /^\/add-source/
+const addSourcePostbackRegexSource = /^\/add-source\s+(\S+)/
+const addSourcePostbackRegexTitle = /^\/add-source\s+(\S+)(\s+\S+)/
 const addToRoomRegex = /^\/add\s+(\S+)(\s*--filters="(.+)")?/
 const editSourceRegex = /^\/edit\s+(\S+)(\s+\S+)?(\s+\S+)?/
 const helpRegex = /^\/help/
@@ -207,6 +211,10 @@ export const handlePostback = async (event: PostbackEvent) => {
     return replyTemplateCarousel(event, altText, columns)
   }
 
+  if (addSourcePostbackRegex.test(text)) {
+    await replyMessage(event, "Enter the rss feed's url")
+  }
+
   await Room.update({ id: chatId }, { lastPostback: event.postback.data })
 }
 
@@ -222,9 +230,9 @@ async function handlePostbackResponse (event: MessageEvent) {
   if (!room || !room.lastPostback) return Promise.resolve(false)
 
   if (addFilterPostbackRegex.test(room.lastPostback)) {
-    const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(room.lastPostback)
-
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
+
+    const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(room.lastPostback)
 
     await addFilter(event, title, [event.message.text])
     room.lastPostback = ''
@@ -232,13 +240,39 @@ async function handlePostbackResponse (event: MessageEvent) {
   }
 
   if (removeFilterPostbackRegex.test(room.lastPostback)) {
-    const [, title] = <RegExpExecArray>removeFilterPostbackRegex.exec(room.lastPostback)
-
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
+
+    const [, title] = <RegExpExecArray>removeFilterPostbackRegex.exec(room.lastPostback)
 
     await removeFilter(event, title, [event.message.text])
     room.lastPostback = ''
     return room.save()
+  }
+
+  if (addSourcePostbackRegexTitle.test(room.lastPostback)) {
+    if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a title`)
+
+    const text = `${room.lastPostback} ${event.message.text} 30`
+    const [, src, title, frequency, globalFlag] = <RegExpExecArray>addSourceRegex.exec(text)
+    await addSource(event, { src, title, frequency: Number(frequency), global: !!globalFlag })
+
+    room.lastPostback = ''
+    return room.save()
+  }
+
+  if (addSourcePostbackRegexSource.test(room.lastPostback)) {
+    if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a url`)
+
+    try {
+      await validateRssSource(event.message.text)  
+    } catch (error) {
+      return replyMessage(event, error.message)
+    }
+
+    room.lastPostback = `${room.lastPostback} ${event.message.text}`
+    await room.save()
+
+    return replyMessage(event, 'Enter a title for the feed')
   }
 
   // Other case returns false and deletes postback
