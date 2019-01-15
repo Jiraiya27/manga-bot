@@ -33,6 +33,8 @@ export const refresh = async (req: Request, res: Response) => {
         newItems = rss.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
       }
 
+      console.log({ newItems })
+
       // Cache rss response, probably won't work since requests are parallel?
       cache[feed.source] = rss
 
@@ -45,6 +47,7 @@ export const refresh = async (req: Request, res: Response) => {
 
         // Send message to update room
         await Promise.all(filteredItems.map(newItem => {
+          console.log(`${newItem.title} : ${newItem.link}`)
           return client.pushMessage(roomFeed.room.id, {
             type: 'text',
             text: `${newItem.title} : ${newItem.link}`,
