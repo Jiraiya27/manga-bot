@@ -21,7 +21,8 @@ export const refresh = async (req: Request, res: Response) => {
       let newItems: RssItem[] = []
       // ms doesn't use 24 Hr format and doesn't tell AM/PM
       // niceoppai uses GMT +7
-      if (feed.title === 'MangaStream Releases' || feed.title === 'Niceoppai Recent Updates') {
+      // meraki doesn't include time
+      if (feed.title === 'MangaStream Releases' || feed.title === 'Niceoppai Recent Updates' || feed.title.startsWith('Meraki Scans')) {
         for (let i = 0; i < rss.items.length; i++) {
           const item = rss.items[i];
           // Assuming that order remains the same, get new items until last known item
