@@ -3,8 +3,7 @@ import { RoomFeeds } from './RoomFeeds'
 import { RssItem } from 'rss-parser'
 
 @Entity()
-export class Feed extends BaseEntity{
-
+export class Feed extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: string
 

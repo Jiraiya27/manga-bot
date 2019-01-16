@@ -2,9 +2,8 @@ import { BaseEntity, Entity, PrimaryColumn, Column, ManyToOne } from 'typeorm'
 import { Room } from './Room'
 import { Feed } from './Feed'
 
-
 @Entity()
-export class RoomFeeds extends BaseEntity{
+export class RoomFeeds extends BaseEntity {
   @PrimaryColumn({ type: 'text' })
   roomId: string
   @ManyToOne(type => Room, room => room.roomFeeds, { primary: true, onDelete: 'CASCADE' })

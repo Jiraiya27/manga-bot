@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { WebhookEvent } from "@line/bot-sdk";
+import { Request, Response } from 'express'
+import { WebhookEvent } from '@line/bot-sdk'
 
 import {
   handleMessage,

@@ -2,8 +2,7 @@ import { BaseEntity, Entity, Column, PrimaryColumn, OneToMany } from 'typeorm'
 import { RoomFeeds } from './RoomFeeds'
 
 @Entity()
-export class Room extends BaseEntity{
-
+export class Room extends BaseEntity {
   @PrimaryColumn()
   id: string
 

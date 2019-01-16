@@ -1,13 +1,27 @@
-import { Client, ClientConfig, MessageEvent, EventBase, Profile, ReplyableEvent, TextMessage, TemplateCarousel, TemplateMessage, TemplateColumn } from '@line/bot-sdk'
+import {
+  Client,
+  ClientConfig,
+  MessageEvent,
+  EventBase,
+  Profile,
+  ReplyableEvent,
+  TextMessage,
+  TemplateCarousel,
+  TemplateMessage,
+  TemplateColumn,
+} from '@line/bot-sdk'
 import { LINE_CONFIG, ADMIN_ID } from '../config'
 
 export const client = new Client(LINE_CONFIG as ClientConfig)
 
 export const getChatRoom = (event: EventBase) => {
   const { type, userId } = event.source
-  const chatId = 'roomId' in event.source ? event.source.roomId
-    : 'groupId' in event.source ? event.source.groupId
-    : event.source.userId 
+  const chatId =
+    'roomId' in event.source
+      ? event.source.roomId
+      : 'groupId' in event.source
+      ? event.source.groupId
+      : event.source.userId
   return { type, userId, chatId }
 }
 
@@ -88,7 +102,7 @@ export const replyMessage = async (event: ReplyableEvent, message: string | stri
 export const replyTemplateCarousel = async (event: ReplyableEvent, altText: string, columns: TemplateColumn[]) => {
   const templateCarousel: TemplateCarousel = { type: 'carousel', columns }
   const templateMessage: TemplateMessage = { type: 'template', altText, template: templateCarousel }
-  return client.replyMessage(event.replyToken, templateMessage);
+  return client.replyMessage(event.replyToken, templateMessage)
 }
 
 export const isAdmin = (event: EventBase) => typeof ADMIN_ID === 'string' && ADMIN_ID === event.source.userId

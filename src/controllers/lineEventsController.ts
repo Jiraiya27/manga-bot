@@ -1,4 +1,12 @@
-import { MessageEvent, FollowEvent, UnfollowEvent, JoinEvent, LeaveEvent, PostbackEvent, TemplateColumn } from '@line/bot-sdk'
+import {
+  MessageEvent,
+  FollowEvent,
+  UnfollowEvent,
+  JoinEvent,
+  LeaveEvent,
+  PostbackEvent,
+  TemplateColumn,
+} from '@line/bot-sdk'
 
 import { Room } from '../entities/Room'
 import { RoomFeeds } from '../entities/RoomFeeds'
@@ -41,7 +49,7 @@ export const handleMessage = async (event: MessageEvent) => {
   // Handle postback if room previously has one
   // otherwise continue as normal
   const postbackResponse = await handlePostbackResponse(event)
-  if (postbackResponse !== false) return;
+  if (postbackResponse !== false) return
 
   const { text } = event.message
 
@@ -58,7 +66,7 @@ export const handleMessage = async (event: MessageEvent) => {
    * Source
    */
   if (addSourceRegex.test(text)) {
-    const [, src, title, frequency, globalFlag] = <RegExpExecArray>addSourceRegex.exec(text)
+    const [, src, title, frequency, globalFlag] = addSourceRegex.exec(text) as RegExpExecArray
     return addSource(event, { src, title, frequency: Number(frequency), global: !!globalFlag })
   }
 
@@ -70,14 +78,14 @@ export const handleMessage = async (event: MessageEvent) => {
   }
 
   if (addToRoomRegex.test(text)) {
-    const [, title,, filters] = <RegExpExecArray>addToRoomRegex.exec(text)
+    const [, title, , filters] = addToRoomRegex.exec(text) as RegExpExecArray
     // escape commas and split args
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return addSourceToRoom(event, title, filtersArray)
   }
 
   if (editSourceRegex.test(text)) {
-    const [, title, property, newVal] = <RegExpExecArray>editSourceRegex.exec(text)
+    const [, title, property, newVal] = editSourceRegex.exec(text) as RegExpExecArray
     return editSource(event, title, property, newVal)
   }
 
@@ -90,7 +98,7 @@ export const handleMessage = async (event: MessageEvent) => {
   }
 
   if (removeSourceFromRoomRegex.test(text)) {
-    const [, title] = <RegExpExecArray>removeSourceFromRoomRegex.exec(text)
+    const [, title] = removeSourceFromRoomRegex.exec(text) as RegExpExecArray
     return removeSourceFromRoom(event, title)
   }
 
@@ -98,13 +106,13 @@ export const handleMessage = async (event: MessageEvent) => {
    * Filter
    */
   if (addFilterRegex.test(text)) {
-    const [, title,, filters] = <RegExpExecArray>addFilterRegex.exec(text)
+    const [, title, , filters] = addFilterRegex.exec(text) as RegExpExecArray
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return addFilter(event, title, filtersArray)
   }
 
   if (removeFilterRegex.test(text)) {
-    const [, title,, filters] = <RegExpExecArray>removeFilterRegex.exec(text)
+    const [, title, , filters] = removeFilterRegex.exec(text) as RegExpExecArray
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return removeFilter(event, title, filtersArray)
   }
@@ -122,7 +130,7 @@ export const handleFollow = async (event: FollowEvent) => {
 
 export const handleUnfollow = async (event: UnfollowEvent) => {
   const { chatId } = getChatRoom(event)
-  Room.delete({ })
+  Room.delete({})
   const room = await Room.delete({
     id: chatId,
   })
@@ -166,39 +174,39 @@ export const handlePostback = async (event: PostbackEvent) => {
   }
 
   if (addToRoomRegex.test(text)) {
-    const [, title,, filters] = <RegExpExecArray>addToRoomRegex.exec(text)
+    const [, title, , filters] = addToRoomRegex.exec(text) as RegExpExecArray
     // escape commas and split args
     const filtersArray = filters ? filters.replace('\\,', ',').split(',') : []
     return addSourceToRoom(event, title, filtersArray)
   }
-  
+
   if (removeSourceFromRoomRegex.test(text)) {
-    const [, title] = <RegExpExecArray>removeSourceFromRoomRegex.exec(text)
+    const [, title] = removeSourceFromRoomRegex.exec(text) as RegExpExecArray
     return removeSourceFromRoom(event, title)
   }
 
   // Postbacks that require more actions
   if (addFilterPostbackRegex.test(text)) {
-    const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(text)
+    const [, title] = addFilterPostbackRegex.exec(text) as RegExpExecArray
     await replyMessage(event, `Enter the filter to be applied for ${title}`)
   }
 
   if (removeFilterSelectedPostbackRegex.test(text)) {
-    const [, title,, filters] = <RegExpExecArray>removeFilterSelectedPostbackRegex.exec(text)
+    const [, title, , filters] = removeFilterSelectedPostbackRegex.exec(text) as RegExpExecArray
     return removeFilter(event, title, [filters])
   }
 
   if (removeFilterPostbackRegex.test(text)) {
-    const [, title] = <RegExpExecArray>removeFilterPostbackRegex.exec(text)
+    const [, title] = removeFilterPostbackRegex.exec(text) as RegExpExecArray
 
     const roomFeed = await RoomFeeds.createQueryBuilder('roomFeed')
-    .innerJoinAndMapOne('roomFeed.room', 'roomFeed.room', 'room', 'room.id = :id', { id: chatId })
-    .innerJoinAndMapOne('roomFeed.feed', 'roomFeed.feed', 'feed', 'feed.title = :title', { title })
-    .getOne()
+      .innerJoinAndMapOne('roomFeed.room', 'roomFeed.room', 'room', 'room.id = :id', { id: chatId })
+      .innerJoinAndMapOne('roomFeed.feed', 'roomFeed.feed', 'feed', 'feed.title = :title', { title })
+      .getOne()
 
     if (!roomFeed || !roomFeed.filters.length) return replyMessage(event, 'No filter to remove')
 
-    const altTexts = [`${roomFeed.feed.title} filters - `];
+    const altTexts = [`${roomFeed.feed.title} filters - `]
     const columns: TemplateColumn[] = roomFeed.filters.map(filter => {
       altTexts.push(filter)
       return {
@@ -207,11 +215,11 @@ export const handlePostback = async (event: PostbackEvent) => {
           {
             type: 'postback' as 'postback',
             label: 'Remove',
-            data: `/remove-filter ${roomFeed.feed.title} filters="${filter}"`
-          }
+            data: `/remove-filter ${roomFeed.feed.title} filters="${filter}"`,
+          },
         ],
       }
-    });
+    })
 
     const altText = altTexts.join('\n')
 
@@ -226,7 +234,7 @@ export const handlePostback = async (event: PostbackEvent) => {
  * Continues handling the post if can
  * Else removes postback and back to handling it as a normal message
  */
-async function handlePostbackResponse (event: MessageEvent) {
+async function handlePostbackResponse(event: MessageEvent) {
   const { chatId } = getChatRoom(event)
 
   const room = await Room.findOne({ id: chatId })
@@ -236,7 +244,7 @@ async function handlePostbackResponse (event: MessageEvent) {
   if (addFilterPostbackRegex.test(room.lastPostback)) {
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
 
-    const [, title] = <RegExpExecArray>addFilterPostbackRegex.exec(room.lastPostback)
+    const [, title] = addFilterPostbackRegex.exec(room.lastPostback) as RegExpExecArray
 
     await addFilter(event, title, [event.message.text])
     room.lastPostback = ''
@@ -247,7 +255,7 @@ async function handlePostbackResponse (event: MessageEvent) {
   if (removeFilterPostbackRegex.test(room.lastPostback)) {
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a filter`)
 
-    const [, title] = <RegExpExecArray>removeFilterPostbackRegex.exec(room.lastPostback)
+    const [, title] = removeFilterPostbackRegex.exec(room.lastPostback) as RegExpExecArray
 
     await removeFilter(event, title, [event.message.text])
     room.lastPostback = ''
@@ -259,7 +267,7 @@ async function handlePostbackResponse (event: MessageEvent) {
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a title`)
 
     const text = `${room.lastPostback} ${event.message.text} 30`
-    const [, src, title, frequency, globalFlag] = <RegExpExecArray>addSourceRegex.exec(text)
+    const [, src, title, frequency, globalFlag] = addSourceRegex.exec(text) as RegExpExecArray
     await addSource(event, { src, title, frequency: Number(frequency), global: !!globalFlag })
 
     room.lastPostback = ''
@@ -270,7 +278,7 @@ async function handlePostbackResponse (event: MessageEvent) {
     if (event.message.type !== 'text') return replyMessage(event, `${event.message.type} cannot be a url`)
 
     try {
-      await validateRssSource(event.message.text)  
+      await validateRssSource(event.message.text)
     } catch (error) {
       return replyMessage(event, error.message)
     }

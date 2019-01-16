@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+import 'reflect-metadata'
 import express, { Request, Response, NextFunction } from 'express'
 import morgan from 'morgan'
 import { middleware } from '@line/bot-sdk'
@@ -18,8 +18,9 @@ createConnection({
   },
   synchronize: true,
   entities: [path.join(__dirname, '/entities/**/*{.js,.ts}')],
-  migrations: [path.join(__dirname  + '/migrations/**/*{.js,.ts}')],
-}).then(() => {
+  migrations: [path.join(__dirname, '/migrations/**/*{.js,.ts}')],
+})
+  .then(() => {
     app.emit('db:connected')
     console.log('DB connected')
   })
@@ -41,10 +42,11 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   return res.status(500).json({ error: err.message })
 })
 
-const listen = () => app.listen(PORT, () => {
-  console.log('Application is listening on port:', PORT)
-  app.emit('started')
-})
+const listen = () =>
+  app.listen(PORT, () => {
+    console.log('Application is listening on port:', PORT)
+    app.emit('started')
+  })
 
 app.on('db:connected', listen)
 

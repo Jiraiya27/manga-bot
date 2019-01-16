@@ -10,16 +10,14 @@ function toLoggerOption(option?: string | boolean | string[]): LoggerOptions {
   if (Array.isArray(option)) {
     // : Exclude<LoggerOptions, boolean | string> <- adding that fails
     const options = ['query', 'schema', 'error', 'warn', 'info', 'log', 'migration']
-    return option.reduce((acc, str) => acc && options.includes(str), true)
-      ? <LoggerOptions>option
-      : false
+    return option.reduce((acc, str) => acc && options.includes(str), true) ? (option as LoggerOptions) : false
   }
   return false
 }
 
 export const LINE_CONFIG: MiddlewareConfig = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
-  channelSecret:<string>process.env.CHANNEL_SECRET,
+  channelSecret: process.env.CHANNEL_SECRET!,
 }
 export const ADMIN_ID = process.env.ADMIN_ID
 
