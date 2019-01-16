@@ -30,7 +30,7 @@ export class Feed extends BaseEntity {
 
   static findPastUpdate() {
     return this.createQueryBuilder('feed')
-      .where("feed.lastUpdated < current_timestamp - interval '1 mins' * feed.frequency")
+      .where("feed.lastUpdated <= current_timestamp - interval '1 mins' * feed.frequency")
       .leftJoinAndSelect('feed.roomFeeds', 'roomFeeds')
       .leftJoinAndSelect('roomFeeds.room', 'room')
       .getMany()
