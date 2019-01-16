@@ -17,8 +17,8 @@ createConnection({
     ssl: true,
   },
   synchronize: true,
-  entities: [path.join(__dirname, '/entities/**/*.js')],
-  migrations: [path.join(__dirname  + '/migrations/**/*.js')],
+  entities: [path.join(__dirname, '/entities/**/*{.js,.ts}')],
+  migrations: [path.join(__dirname  + '/migrations/**/*{.js,.ts}')],
 }).then(() => {
     app.emit('db:connected')
     console.log('DB connected')
