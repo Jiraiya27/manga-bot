@@ -14,54 +14,67 @@ export const refresh = async (req: Request, res: Response) => {
     // Feed cache for repeating sources
     const cache: { [key: string]: RssFeed } = {}
 
-    await Promise.all(feeds.map(async (feed, index) => {
-      const rss = cache[feed.source] || await parseRss(feed.source)
-      const lastUpdatedMoment = moment(feed.lastUpdated)
+    await Promise.all(
+      feeds.map(async (feed, index) => {
+        const rss = cache[feed.source] || (await parseRss(feed.source))
+        const lastUpdatedMoment = moment(feed.lastUpdated)
 
-      let newItems: RssItem[] = []
-      // ms doesn't use 24 Hr format and doesn't tell AM/PM
-      // niceoppai uses GMT +7
-      // meraki doesn't include time
-      if (feed.title === 'MangaStream Releases' || feed.title === 'Niceoppai Recent Updates' || feed.title.startsWith('Meraki Scans')) {
-        for (let i = 0; i < rss.items.length; i++) {
-          const item = rss.items[i];
-          // Assuming that order remains the same, get new items until last known item
-          if (item.title === feed.lastItem.title) break;
-          newItems.push(item)
-        }
-      } else {
-        // get new items based on last updated time
-        newItems = rss.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
-      }
-
-      console.log({ newItems })
-
-      // Cache rss response, probably won't work since requests are parallel?
-      cache[feed.source] = rss
-
-      // Update subscribed rooms
-      await Promise.all(feed.roomFeeds.map(async roomFeed => {
-        // Apply filters to title
-        const filteredItems = roomFeed.filters.length > 0
-          ? newItems.filter(item => roomFeed.filters.filter(filter => new RegExp(filter, 'i').test(item.title || '')).length > 0)
-          : newItems
-
-        // Send message to update room
-        await Promise.all(filteredItems.map(newItem => {
-          console.log(`${newItem.title} : ${newItem.link}`)
-          return client.pushMessage(roomFeed.room.id, {
-            type: 'text',
-            text: `${newItem.title} : ${newItem.link}`,
+        let newItems: RssItem[] = []
+        // ms doesn't use 24 Hr format and doesn't tell AM/PM
+        // niceoppai uses GMT +7
+        // meraki doesn't include time
+        if (
+          feed.title === 'MangaStream Releases' ||
+          feed.title === 'Niceoppai Recent Updates' ||
+          feed.title.startsWith('Meraki Scans')
+        ) {
+          rss.items.forEach(item => {
+            // Assuming that order remains the same, get new items until last known item
+            if (item.title !== feed.lastItem.title) {
+              newItems.push(item)
+            }
           })
-        }))
-      }))
+        } else {
+          // get new items based on last updated time
+          newItems = rss.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
+        }
 
-      // Update channel time and items
-      feed.lastItem = rss.items[0]
-      feed.lastUpdated = new Date()
-      delete feed.roomFeeds // Need to delete otherwise it gets updated twice and causes error
-      await feed.save()
-    }))
+        console.log({ newItems })
+
+        // Cache rss response, probably won't work since requests are parallel?
+        cache[feed.source] = rss
+
+        // Update subscribed rooms
+        await Promise.all(
+          feed.roomFeeds.map(async roomFeed => {
+            // Apply filters to title
+            const filteredItems =
+              roomFeed.filters.length > 0
+                ? newItems.filter(
+                    item => roomFeed.filters.filter(filter => new RegExp(filter, 'i').test(item.title || '')).length > 0
+                  )
+                : newItems
+
+            // Send message to update room
+            await Promise.all(
+              filteredItems.map(newItem => {
+                console.log(`${newItem.title} : ${newItem.link}`)
+                return client.pushMessage(roomFeed.room.id, {
+                  type: 'text',
+                  text: `${newItem.title} : ${newItem.link}`,
+                })
+              })
+            )
+          })
+        )
+
+        // Update channel time and items
+        feed.lastItem = rss.items[0]
+        feed.lastUpdated = new Date()
+        delete feed.roomFeeds // Need to delete otherwise it gets updated twice and causes error
+        await feed.save()
+      })
+    )
 
     return res.send('Success')
   } catch (error) {
