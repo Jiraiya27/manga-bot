@@ -10,7 +10,7 @@
     "dev": "ts-node --files src/index.ts",
     "prestart": "tsc",
     "start": "node dist/index.js",
-    "lint": "tslint -c tslint.json src/**/*.ts"
+    "lint": "tslint -p tsconfig.json src/**/*.ts"
   },
   "dependencies": {
     "@line/bot-sdk": "^6.1.0",
@@ -36,7 +36,11 @@
     "@types/node-cron": "^1.2.0",
     "@types/normalize-url": "^1.9.1",
     "@types/pg": "^7.4.10",
+    "prettier": "^1.15.3",
     "ts-node": "^7.0.1",
-    "tslint": "^5.11.0"
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.11.1",
+    "tslint-config-prettier": "^1.17.0",
+    "tslint-plugin-prettier": "^2.0.1"
   }
 }
