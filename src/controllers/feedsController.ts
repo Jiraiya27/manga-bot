@@ -76,7 +76,7 @@ export const refresh = async (req: Request, res: Response) => {
       })
     )
 
-    return res.send('Success')
+    return res.sendStatus(200)
   } catch (error) {
     // Error from @lineSDK
     if (error.originalError) {
@@ -84,6 +84,6 @@ export const refresh = async (req: Request, res: Response) => {
     } else {
       console.error(error)
     }
-    return res.send('Failed')
+    return res.sendStatus(500)
   }
 }
