@@ -24,22 +24,24 @@ export const refresh = async (req: Request, res: Response) => {
         // niceoppai uses GMT +7
         // meraki doesn't include time
         if (
-          feed.title === 'MangaStream Releases' ||
-          feed.title === 'Niceoppai Recent Updates' ||
-          feed.title.startsWith('Meraki Scans')
+          rss.title &&
+          (rss.title === 'MangaStream Releases' ||
+            rss.title === 'Niceoppai Recent Updates' ||
+            rss.title.startsWith('Meraki Scans'))
         ) {
-          rss.items.forEach(item => {
+          // tslint:disable prefer-for-of
+          for (let i = 0; i < rss.items.length; i++) {
+            const item = rss.items[i]
             // Assuming that order remains the same, get new items until last known item
-            if (item.title !== feed.lastItem.title) {
-              newItems.push(item)
-            }
-          })
+            if (item.title === feed.lastItem.title) break
+            newItems.push(item)
+          }
         } else {
           // get new items based on last updated time
           newItems = rss.items.filter(item => moment(item.isoDate).isAfter(lastUpdatedMoment))
         }
 
-        console.log({ newItems })
+        console.log(feed.title, { newItems })
 
         // Cache rss response, probably won't work since requests are parallel?
         cache[feed.source] = rss
@@ -58,7 +60,6 @@ export const refresh = async (req: Request, res: Response) => {
             // Send message to update room
             await Promise.all(
               filteredItems.map(newItem => {
-                console.log(`${newItem.title} : ${newItem.link}`)
                 return client.pushMessage(roomFeed.room.id, {
                   type: 'text',
                   text: `${newItem.title} : ${newItem.link}`,
