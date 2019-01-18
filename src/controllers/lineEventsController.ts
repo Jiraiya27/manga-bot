@@ -280,6 +280,8 @@ async function handlePostbackResponse(event: MessageEvent) {
     try {
       await validateRssSource(event.message.text)
     } catch (error) {
+      room.lastPostback = ''
+      await room.save()
       return replyMessage(event, error.message)
     }
 
