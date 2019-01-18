@@ -130,7 +130,6 @@ export const handleFollow = async (event: FollowEvent) => {
 
 export const handleUnfollow = async (event: UnfollowEvent) => {
   const { chatId } = getChatRoom(event)
-  Room.delete({})
   const room = await Room.delete({
     id: chatId,
   })
