@@ -16,7 +16,15 @@ export const refresh = async (req: Request, res: Response) => {
 
     await Promise.all(
       feeds.map(async (feed, index) => {
-        const rss = cache[feed.source] || (await parseRss(feed.source))
+        let rss = cache[feed.source]
+        if (!rss) {
+          try {
+            rss = await parseRss(feed.source)
+          } catch (error) {
+            console.error(error)
+            return Promise.resolve()
+          }
+        }
         const lastUpdatedMoment = moment(feed.lastUpdated)
 
         let newItems: RssItem[] = []
