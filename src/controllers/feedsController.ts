@@ -31,11 +31,16 @@ export const refresh = async (req: Request, res: Response) => {
         // ms doesn't use 24 Hr format and doesn't tell AM/PM
         // niceoppai uses GMT +7
         // meraki doesn't include time
+        // Jaimini's uploads first then updates rss to be the its uploaded time
+        //    which causes lastUpdatedTime to exceed and assume that it was already included
+        // Basically only mangadex is working properly :/
         if (
           rss.title &&
           (rss.title === 'MangaStream Releases' ||
             rss.title === 'Niceoppai Recent Updates' ||
-            rss.title.startsWith('Meraki Scans'))
+            rss.title.startsWith('Meraki Scans') ||
+            rss.title === "Jaimini's Box"
+          )
         ) {
           // tslint:disable prefer-for-of
           for (let i = 0; i < rss.items.length; i++) {
